@@ -58,7 +58,11 @@ const uploadLogoArea = multer({ storage: storageLogoArea, fileFilter, limits: { 
 
 // GET /api/turnos
 router.get('/turnos', (req, res) => {
-  db.all('SELECT * FROM turnos ORDER BY fecha_hora ASC', (err, rows) => {
+  const incluirCancelados = req.query.incluir_cancelados === 'true';
+  const sql = incluirCancelados
+    ? 'SELECT * FROM turnos ORDER BY fecha_hora ASC'
+    : "SELECT * FROM turnos WHERE estado != 'cancelado' ORDER BY fecha_hora ASC";
+  db.all(sql, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -138,6 +142,49 @@ router.put('/turnos/:id/atender', (req, res) => {
       });
     }
   );
+});
+
+// PUT /api/turnos/:id/cancelar
+router.put('/turnos/:id/cancelar', requireAuth, (req, res) => {
+  const { id } = req.params;
+
+  db.run(
+    "UPDATE turnos SET estado = 'cancelado' WHERE id = ? AND estado != 'atendido'",
+    [id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Turno no encontrado o ya atendido.' });
+      db.get('SELECT * FROM turnos WHERE id = ?', [id], (err, turno) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(turno);
+      });
+    }
+  );
+});
+
+// PUT /api/turnos/:id/transferir
+router.put('/turnos/:id/transferir', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const { area } = req.body;
+  if (!area) return res.status(400).json({ error: 'El campo area es requerido.' });
+
+  db.get('SELECT id FROM areas WHERE nombre = ?', [area], (err, areaRow) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!areaRow) return res.status(404).json({ error: 'Área destino no encontrada.' });
+
+    db.run(
+      "UPDATE turnos SET area = ?, estado = 'esperando', ventanilla = '' WHERE id = ? AND estado != 'atendido' AND estado != 'cancelado'",
+      [area, id],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'Turno no encontrado o no transferible.' });
+        db.get('SELECT * FROM turnos WHERE id = ?', [id], (err, turno) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json(turno);
+        });
+      }
+    );
+  });
 });
 
 // GET /api/areas
@@ -357,14 +404,13 @@ router.put('/config/logo', requireAuth, requireAdmin, uploadLogoSistema.single('
   if (!req.file) return res.status(400).json({ error: 'No se recibió ninguna imagen.' });
 
   const logoUrl = `/uploads/logo/${req.file.filename}`;
-  db.run(
-    "INSERT INTO configuracion (clave, valor) VALUES ('logo', ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor",
-    [logoUrl],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ mensaje: 'Logo actualizado correctamente.', logo_url: logoUrl });
-    }
-  );
+  const stmt = db.prepare('INSERT INTO configuracion (clave, valor) VALUES (?, ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor');
+  stmt.run('logo_url', logoUrl);
+  stmt.run('logo', logoUrl);
+  stmt.finalize((err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ mensaje: 'Logo actualizado correctamente.', logo_url: logoUrl });
+  });
 });
 
 // GET /api/config
@@ -391,8 +437,7 @@ router.put('/config', (req, res) => {
 });
 
 // GET /api/stats
-router.get('/stats', (req, res) => {
-  const hoy = new Date().toISOString().split('T')[0];
+router.get('/stats', (req, res) => {  const hoy = new Date().toISOString().split('T')[0];
 
   const queries = {
     atendidos: `SELECT COUNT(*) as total FROM turnos WHERE estado = 'atendido' AND DATE(fecha_hora) = ?`,
@@ -424,4 +469,101 @@ router.get('/stats', (req, res) => {
   });
 });
 
+// ===================== SUCURSALES =====================
+
+// GET /api/sucursales — listar sucursales con usuarios asignados
+router.get('/sucursales', requireAuth, requireAdmin, (req, res) => {
+  db.all('SELECT * FROM sucursales ORDER BY nombre ASC', (err, sucursales) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (sucursales.length === 0) return res.json([]);
+
+    const queries = sucursales.map(s => new Promise((resolve, reject) => {
+      db.all(
+        `SELECT u.id, u.username, u.nombre, u.rol
+         FROM sucursal_usuarios su
+         JOIN usuarios u ON su.usuario_id = u.id
+         WHERE su.sucursal_id = ?`,
+        [s.id],
+        (err, usuarios) => {
+          if (err) return reject(err);
+          resolve({ ...s, usuarios });
+        }
+      );
+    }));
+
+    Promise.all(queries)
+      .then(resultado => res.json(resultado))
+      .catch(e => res.status(500).json({ error: e.message }));
+  });
+});
+
+// POST /api/sucursales — crear sucursal
+router.post('/sucursales', requireAuth, requireAdmin, (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre || !nombre.trim()) return res.status(400).json({ error: 'El nombre es requerido.' });
+
+  db.run('INSERT INTO sucursales (nombre) VALUES (?)', [nombre.trim()], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    db.get('SELECT * FROM sucursales WHERE id = ?', [this.lastID], (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      row.usuarios = [];
+      res.status(201).json(row);
+    });
+  });
+});
+
+// PUT /api/sucursales/:id — renombrar sucursal
+router.put('/sucursales/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { nombre } = req.body;
+  if (!nombre || !nombre.trim()) return res.status(400).json({ error: 'El nombre es requerido.' });
+
+  db.run('UPDATE sucursales SET nombre = ? WHERE id = ?', [nombre.trim(), id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Sucursal no encontrada.' });
+    res.json({ mensaje: 'Sucursal actualizada correctamente.' });
+  });
+});
+
+// PUT /api/sucursales/:id/usuarios — asignar usuarios a la sucursal (reemplaza asignación anterior)
+router.put('/sucursales/:id/usuarios', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { usuario_ids } = req.body;
+  if (!Array.isArray(usuario_ids)) return res.status(400).json({ error: 'usuario_ids debe ser un array.' });
+
+  db.get('SELECT id FROM sucursales WHERE id = ?', [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Sucursal no encontrada.' });
+
+    db.run('DELETE FROM sucursal_usuarios WHERE sucursal_id = ?', [id], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      if (usuario_ids.length === 0) return res.json({ mensaje: 'Personal actualizado correctamente.' });
+
+      const stmt = db.prepare('INSERT OR IGNORE INTO sucursal_usuarios (sucursal_id, usuario_id) VALUES (?, ?)');
+      usuario_ids.forEach(uid => stmt.run(id, uid));
+      stmt.finalize((err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ mensaje: 'Personal actualizado correctamente.' });
+      });
+    });
+  });
+});
+
+// DELETE /api/sucursales/:id — eliminar sucursal
+router.delete('/sucursales/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+
+  db.run('DELETE FROM sucursal_usuarios WHERE sucursal_id = ?', [id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    db.run('DELETE FROM sucursales WHERE id = ?', [id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Sucursal no encontrada.' });
+      res.json({ mensaje: 'Sucursal eliminada correctamente.' });
+    });
+  });
+});
+
 module.exports = router;
+

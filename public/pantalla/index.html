@@ -103,10 +103,14 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1 id="hospital-nombre">E-TURNS</h1>
+  <header id="header-bar">
+    <div style="display:flex;align-items:center;gap:1rem">
+      <img id="hospital-logo" src="" alt="Logo" style="display:none;max-height:50px;max-width:140px;object-fit:contain">
+      <h1 id="hospital-nombre">E-TURNS</h1>
+    </div>
     <div id="reloj">--:--:--</div>
   </header>
+  <style id="turno-ventanilla-style"></style>
 
   <div class="turno-panel">
     <div class="turno-etiqueta">Turno en atención</div>
@@ -147,8 +151,54 @@
         const res = await fetch('/api/config');
         const config = await res.json();
         if (config.nombre) document.getElementById('hospital-nombre').textContent = config.nombre;
-        if (config.videoYoutube) document.getElementById('video-frame').src = config.videoYoutube + '?autoplay=1&mute=1&loop=1';
+
+        // Logo
+        const logoUrl = config.logo_url || config.logo;
+        if (logoUrl) {
+          const logoEl = document.getElementById('hospital-logo');
+          logoEl.src = logoUrl;
+          logoEl.style.display = 'block';
+          document.getElementById('hospital-nombre').style.display = 'none';
+        }
+
+        // Colores dinámicos
+        const colorPrimario = config.colorPrimario || '#0d6efd';
+        const colorSecundario = config.colorSecundario || '#198754';
+        document.getElementById('header-bar').style.background =
+          `linear-gradient(90deg, ${colorPrimario}, ${colorSecundario})`;
+        document.getElementById('turno-ventanilla-style').textContent =
+          `.turno-ventanilla { background: ${colorPrimario}; }`;
+
+        // Video
+        if (config.videoYoutube) {
+          const videoFrame = document.getElementById('video-frame');
+          videoFrame.src = config.videoYoutube + '?autoplay=1&mute=1&loop=1';
+
+          // Tamaño de video
+          const sizeMap = { 'pequeño': '25%', 'mediano': '40%', 'grande': '60%', 'completo': '100%' };
+          const videoSize = config.video_size ? sizeMap[config.video_size] || config.video_size : null;
+          if (videoSize) {
+            const videoPanel = document.querySelector('.video-panel');
+            if (videoSize === '100%') {
+              videoPanel.style.width = '100%';
+              document.body.style.gridTemplateColumns = '1fr';
+              videoPanel.style.position = 'fixed';
+              videoPanel.style.inset = '0';
+              videoPanel.style.zIndex = '-1';
+              videoPanel.style.borderLeft = 'none';
+            } else {
+              videoPanel.style.width = videoSize;
+              document.body.style.gridTemplateColumns = `1fr ${videoSize}`;
+            }
+          }
+        }
+
         if (config.mensaje) document.getElementById('mensaje-footer').textContent = config.mensaje;
+
+        // Voz TTS
+        if (config.voz_tts) {
+          window._vozTts = config.voz_tts;
+        }
       } catch (e) {}
     }
 
@@ -193,11 +243,28 @@
     function anunciarVoz(turno) {
       if (!window.speechSynthesis) return;
       const msg = new SpeechSynthesisUtterance();
-      msg.lang = 'es-ES';
       const ventanilla = turno.ventanilla ? `, diríjase a ${turno.ventanilla}` : '';
       msg.text = `Turno ${turno.numero}, área ${turno.area}${ventanilla}`;
       msg.rate = 0.9;
       msg.volume = 1;
+
+      const vozNombre = window._vozTts || null;
+      const voices = window.speechSynthesis.getVoices();
+      let vozSeleccionada = null;
+
+      if (vozNombre && voices.length > 0) {
+        vozSeleccionada = voices.find(v => v.name === vozNombre) || null;
+      }
+      if (!vozSeleccionada && voices.length > 0) {
+        vozSeleccionada = voices.find(v => v.lang && v.lang.startsWith('es')) || null;
+      }
+
+      if (vozSeleccionada) {
+        msg.voice = vozSeleccionada;
+      } else {
+        msg.lang = 'es-ES';
+      }
+
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(msg);
     }

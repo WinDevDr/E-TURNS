@@ -148,6 +148,7 @@
     <button class="tab-btn" id="tbtn-areas" onclick="mostrarTab('areas', this)">🏷️ Gestión de Áreas</button>
     <button class="tab-btn" id="tbtn-ventanillas" onclick="mostrarTab('ventanillas', this)">🪟 Gestión de Ventanillas</button>
     <button class="tab-btn" id="tbtn-usuarios" onclick="mostrarTab('usuarios', this)">👥 Gestión de Usuarios</button>
+    <button class="tab-btn" id="tbtn-sucursales" onclick="mostrarTab('sucursales', this)">🏢 Sucursales</button>
   </div>
 
   <div class="container">
@@ -197,6 +198,22 @@
           <div class="form-group">
             <label>URL de Video YouTube (embed)</label>
             <input type="url" id="conf-videoYoutube" placeholder="https://www.youtube.com/embed/...">
+          </div>
+          <div class="form-group">
+            <label>Tamaño del Video</label>
+            <select id="conf-video_size">
+              <option value="pequeño">Pequeño (25%)</option>
+              <option value="mediano">Mediano (40%)</option>
+              <option value="grande">Grande (60%)</option>
+              <option value="completo">Pantalla completa (100%)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Voz para Anuncios de Turnos (TTS)</label>
+            <select id="conf-voz_tts">
+              <option value="">— Voz por defecto del sistema —</option>
+            </select>
+            <small style="color:#888;font-size:0.82rem">Las voces disponibles dependen del navegador.</small>
           </div>
           <div class="form-group">
             <label>Mensaje en Pantalla</label>
@@ -297,6 +314,53 @@
       <div class="card">
         <h2>👥 Usuarios Registrados</h2>
         <div id="usuarios-lista"><p style="color:#888">Cargando usuarios...</p></div>
+      </div>
+    </div>
+
+    <!-- TAB: Sucursales -->
+    <div class="tab-panel" id="tab-sucursales">
+      <div class="card">
+        <h2>➕ Agregar Sucursal</h2>
+        <form id="form-sucursal" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group" style="flex:1;margin:0">
+            <label>Nombre de la Sucursal</label>
+            <input type="text" id="sucursal-nombre" placeholder="Ej: Sucursal Norte" required>
+          </div>
+          <button type="submit" class="btn btn-primary">➕ Agregar Sucursal</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>🏢 Sucursales Registradas</h2>
+        <div id="sucursales-lista"><p style="color:#888">Cargando sucursales...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Renombrar sucursal -->
+  <div class="modal-overlay" id="modal-renombrar-sucursal">
+    <div class="modal">
+      <h3>✏️ Renombrar Sucursal</h3>
+      <div class="form-group">
+        <label>Nuevo nombre</label>
+        <input type="text" id="renombrar-sucursal-input" placeholder="Ej: Sucursal Principal">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="cerrarModal('modal-renombrar-sucursal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarRenombrarSucursal()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Asignar personal a sucursal -->
+  <div class="modal-overlay" id="modal-asignar-sucursal">
+    <div class="modal">
+      <h3>👥 Asignar Personal a Sucursal</h3>
+      <div class="form-group">
+        <div id="asignar-sucursal-checkboxes" style="max-height:260px;overflow-y:auto;border:1px solid #dee2e6;border-radius:8px;padding:0.75rem"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="cerrarModal('modal-asignar-sucursal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarAsignarSucursal()">✅ Guardar</button>
       </div>
     </div>
   </div>
@@ -430,10 +494,29 @@
           document.getElementById('conf-colorSecundario-picker').value = config.colorSecundario;
         }
         if (config.videoYoutube) document.getElementById('conf-videoYoutube').value = config.videoYoutube;
+        if (config.video_size) document.getElementById('conf-video_size').value = config.video_size;
+        if (config.voz_tts) {
+          // Esperar que las voces estén disponibles
+          const sel = document.getElementById('conf-voz_tts');
+          const setVoice = () => {
+            const opts = Array.from(sel.options);
+            const match = opts.find(o => o.value === config.voz_tts);
+            if (!match) {
+              const opt = document.createElement('option');
+              opt.value = config.voz_tts;
+              opt.textContent = config.voz_tts;
+              sel.appendChild(opt);
+            }
+            sel.value = config.voz_tts;
+          };
+          if (sel.options.length > 1) setVoice();
+          else window.addEventListener('vozesListas', setVoice, { once: true });
+        }
         if (config.mensaje) document.getElementById('conf-mensaje').value = config.mensaje;
         const preview = document.getElementById('logo-preview-sistema');
-        if (config.logo) {
-          preview.src = config.logo;
+        const logoUrl = config.logo_url || config.logo;
+        if (logoUrl) {
+          preview.src = logoUrl;
           preview.style.display = 'block';
           document.getElementById('logo-no-img').style.display = 'none';
         }
@@ -447,6 +530,8 @@
         colorPrimario: document.getElementById('conf-colorPrimario').value,
         colorSecundario: document.getElementById('conf-colorSecundario').value,
         videoYoutube: document.getElementById('conf-videoYoutube').value,
+        video_size: document.getElementById('conf-video_size').value,
+        voz_tts: document.getElementById('conf-voz_tts').value,
         mensaje: document.getElementById('conf-mensaje').value
       };
       try {
@@ -472,6 +557,159 @@
         document.getElementById('logo-no-img').style.display = 'none';
         fileInput.value = '';
       } catch (e) { mostrarAlerta('Error al subir logo.', 'error'); }
+    }
+
+    // ---- CARGAR VOCES TTS ----
+    function cargarVocesTTS() {
+      if (!window.speechSynthesis) return;
+      const cargar = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0) return;
+        const sel = document.getElementById('conf-voz_tts');
+        const valorActual = sel.value;
+        sel.innerHTML = '<option value="">— Voz por defecto del sistema —</option>';
+        voices.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.name;
+          opt.textContent = `${v.name} (${v.lang})`;
+          sel.appendChild(opt);
+        });
+        if (valorActual) sel.value = valorActual;
+        window.dispatchEvent(new Event('vozesListas'));
+      };
+      window.speechSynthesis.onvoiceschanged = cargar;
+      cargar();
+    }
+    cargarVocesTTS();
+
+    // ---- SUCURSALES ----
+    let sucursalEditandoId = null;
+    let sucursalAsignandoId = null;
+    let todosUsuarios = [];
+
+    async function cargarSucursales() {
+      try {
+        const res = await fetch('/api/sucursales');
+        const sucursales = await res.json();
+        const lista = document.getElementById('sucursales-lista');
+        if (!sucursales.length) { lista.innerHTML = '<p style="color:#888">No hay sucursales registradas.</p>'; return; }
+        lista.innerHTML = sucursales.map(s => {
+          const personal = s.usuarios && s.usuarios.length
+            ? s.usuarios.map(u => escHtml(u.nombre || u.username)).join(', ')
+            : '<em style="color:#aaa">Sin personal asignado</em>';
+          return `
+            <div class="ventanilla-item" id="sucursal-item-${s.id}">
+              <div class="ventanilla-num" style="background:#6f42c1">🏢</div>
+              <div class="ventanilla-info">
+                <strong>${escHtml(s.nombre)}</strong>
+                <small>Personal: ${personal}</small>
+              </div>
+              <div class="ventanilla-actions">
+                <button class="btn btn-warning" data-sid="${s.id}" data-snombre="${escHtml(s.nombre)}" onclick="abrirRenombrarSucursalBtn(this)">✏️ Renombrar</button>
+                <button class="btn btn-secondary" data-sid="${s.id}" onclick="abrirAsignarSucursalBtn(this)">👥 Asignar Personal</button>
+                <button class="btn btn-danger" data-sid="${s.id}" data-snombre="${escHtml(s.nombre)}" onclick="eliminarSucursalBtn(this)">🗑️ Eliminar</button>
+              </div>
+            </div>`;
+        }).join('');
+      } catch (e) { document.getElementById('sucursales-lista').innerHTML = '<p style="color:red">Error al cargar sucursales.</p>'; }
+    }
+
+    document.getElementById('form-sucursal').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('sucursal-nombre').value.trim();
+      if (!nombre) return;
+      try {
+        const res = await fetch('/api/sucursales', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre })
+        });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al crear sucursal.', 'error'); return; }
+        document.getElementById('sucursal-nombre').value = '';
+        mostrarAlerta('Sucursal creada correctamente.', 'success');
+        cargarSucursales();
+      } catch (e) { mostrarAlerta('Error al crear sucursal.', 'error'); }
+    });
+
+    function abrirRenombrarSucursalBtn(btn) {
+      sucursalEditandoId = btn.dataset.sid;
+      document.getElementById('renombrar-sucursal-input').value = btn.dataset.snombre;
+      document.getElementById('modal-renombrar-sucursal').classList.add('open');
+    }
+
+    async function confirmarRenombrarSucursal() {
+      const nombre = document.getElementById('renombrar-sucursal-input').value.trim();
+      if (!nombre || !sucursalEditandoId) return;
+      try {
+        const res = await fetch(`/api/sucursales/${sucursalEditandoId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre })
+        });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al renombrar.', 'error'); return; }
+        cerrarModal('modal-renombrar-sucursal');
+        mostrarAlerta('Sucursal renombrada correctamente.', 'success');
+        cargarSucursales();
+      } catch (e) { mostrarAlerta('Error al renombrar sucursal.', 'error'); }
+    }
+
+    async function abrirAsignarSucursalBtn(btn) {
+      sucursalAsignandoId = btn.dataset.sid;
+      try {
+        const [resU, resS] = await Promise.all([
+          fetch('/api/usuarios'),
+          fetch('/api/sucursales')
+        ]);
+        const usuarios = await resU.json();
+        const sucursales = await resS.json();
+        todosUsuarios = usuarios;
+        const sucursal = sucursales.find(s => String(s.id) === String(sucursalAsignandoId));
+        const asignados = sucursal && sucursal.usuarios ? sucursal.usuarios.map(u => u.id) : [];
+        const container = document.getElementById('asignar-sucursal-checkboxes');
+        if (!usuarios.length) {
+          container.innerHTML = '<p style="color:#888">No hay usuarios registrados.</p>';
+        } else {
+          container.innerHTML = usuarios.map(u => `
+            <label style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;cursor:pointer">
+              <input type="checkbox" value="${u.id}" ${asignados.includes(u.id) ? 'checked' : ''}>
+              ${escHtml(u.nombre || u.username)} <small style="color:#888">(${escHtml(u.rol)})</small>
+            </label>
+          `).join('');
+        }
+        document.getElementById('modal-asignar-sucursal').classList.add('open');
+      } catch (e) { mostrarAlerta('Error al cargar usuarios.', 'error'); }
+    }
+
+    async function confirmarAsignarSucursal() {
+      const checkboxes = document.querySelectorAll('#asignar-sucursal-checkboxes input[type="checkbox"]:checked');
+      const usuario_ids = Array.from(checkboxes).map(cb => parseInt(cb.value, 10));
+      try {
+        const res = await fetch(`/api/sucursales/${sucursalAsignandoId}/usuarios`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuario_ids })
+        });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al asignar personal.', 'error'); return; }
+        cerrarModal('modal-asignar-sucursal');
+        mostrarAlerta('Personal asignado correctamente.', 'success');
+        cargarSucursales();
+      } catch (e) { mostrarAlerta('Error al asignar personal.', 'error'); }
+    }
+
+    async function eliminarSucursalBtn(btn) {
+      const id = btn.dataset.sid;
+      const nombre = btn.dataset.snombre;
+      if (!confirm(`¿Eliminar la sucursal "${nombre}"?`)) return;
+      try {
+        const res = await fetch(`/api/sucursales/${id}`, { method: 'DELETE' });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al eliminar.', 'error'); return; }
+        mostrarAlerta('Sucursal eliminada correctamente.', 'success');
+        cargarSucursales();
+      } catch (e) { mostrarAlerta('Error al eliminar sucursal.', 'error'); }
     }
 
     // ---- ÁREAS ----
@@ -837,6 +1075,7 @@
     cargarVentanillas();
     cargarOperadores();
     obtenerUsuarioActual().then(() => cargarUsuarios());
+    cargarSucursales();
   </script>
 </body>
 </html>

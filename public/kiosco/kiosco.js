@@ -1,15 +1,18 @@
 const socket = io();
 let turnoActual = null;
+let configSistema = {};
 
 // Cargar configuración del hospital
 async function cargarConfig() {
   try {
     const res = await fetch('/api/config');
     const config = await res.json();
+    configSistema = config;
     if (config.nombre) document.getElementById('hospital-nombre').textContent = config.nombre;
-    if (config.logo) {
+    const logoUrl = config.logo_url || config.logo;
+    if (logoUrl) {
       const logo = document.getElementById('hospital-logo');
-      logo.src = config.logo;
+      logo.src = logoUrl;
       logo.style.display = 'block';
     }
   } catch (e) {
@@ -34,7 +37,10 @@ async function cargarAreas() {
       const btn = document.createElement('button');
       btn.className = 'area-btn';
       btn.style.background = area.color || '#0d6efd';
-      btn.innerHTML = `<span class="prefijo">${area.prefijo}</span><span>${area.nombre}</span>`;
+      // Mostrar solo el nombre del área (sin prefijo) en el botón
+      const span = document.createElement('span');
+      span.textContent = area.nombre;
+      btn.appendChild(span);
       btn.addEventListener('click', () => solicitarTurno(area.nombre));
       grid.appendChild(btn);
     });
@@ -81,7 +87,13 @@ function cerrarModal() {
 
 function imprimirTicket() {
   if (!turnoActual) return;
-  const win = window.open('', '_blank', 'width=400,height=500');
+  const logoUrl = configSistema.logo_url || configSistema.logo || '';
+  const nombreInst = configSistema.nombre || 'E-TURNS';
+  const logoHtml = logoUrl
+    ? `<img src="${logoUrl}" alt="Logo" style="max-height:80px;max-width:180px;object-fit:contain;margin-bottom:0.5rem">`
+    : `<h2 style="margin-bottom:0.5rem">${nombreInst}</h2>`;
+
+  const win = window.open('', '_blank', 'width=400,height=550');
   win.document.write(`
     <!DOCTYPE html>
     <html lang="es">
@@ -97,7 +109,7 @@ function imprimirTicket() {
       </style>
     </head>
     <body>
-      <h2>E-TURNS</h2>
+      ${logoHtml}
       <hr>
       <div class="numero">${turnoActual.numero}</div>
       <p><strong>Área:</strong> ${turnoActual.area}</p>

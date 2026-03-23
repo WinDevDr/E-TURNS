@@ -71,6 +71,7 @@
     .btn-repetir { background: #fd7e14; color: #fff; }
     .btn-atender { background: #198754; color: #fff; }
     .btn-transferir { background: #6c757d; color: #fff; }
+    .btn-cancelar { background: #dc3545; color: #fff; }
     .empty-msg { text-align: center; color: #888; padding: 2rem; font-style: italic; }
     .turno-actual {
       background: #0d6efd;
@@ -82,6 +83,14 @@
       display: none;
     }
     .turno-actual .num { font-size: 2.5rem; font-weight: 900; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 2rem; width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .modal h3 { font-size: 1.1rem; color: #0d6efd; margin-bottom: 1.25rem; }
+    .modal select { width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid #dee2e6; border-radius: 8px; font-size: 1rem; background: #fafafa; margin-bottom: 1rem; }
+    .modal-actions { display: flex; gap: 0.75rem; margin-top: 1rem; justify-content: flex-end; }
+    .btn-outline { background: #fff; color: #555; border: 1.5px solid #dee2e6; padding: 0.5rem 1.1rem; border-radius: 8px; font-size: 0.95rem; cursor: pointer; font-weight: 600; }
+    .btn-outline:hover { background: #f0f4f8; }
   </style>
 </head>
 <body>
@@ -138,11 +147,35 @@
     </table>
   </div>
 
+  <!-- Modal: Transferir Turno -->
+  <div class="modal-overlay" id="modal-transferir">
+    <div class="modal">
+      <h3>↔️ Transferir Turno</h3>
+      <p style="color:#555;margin-bottom:1rem">Seleccione el área destino:</p>
+      <select id="transferir-area-sel"></select>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="cerrarModalTransferir()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarTransferir()">Transferir</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     let turnos = [];
     let turnoLlamadoActual = null;
+    let turnoATransferir = null;
+    let areasDisponibles = [];
+
+    // Cargar áreas disponibles
+    async function cargarAreas() {
+      try {
+        const res = await fetch('/api/areas');
+        areasDisponibles = await res.json();
+      } catch (e) { console.error('Error al cargar áreas:', e); }
+    }
+    cargarAreas();
 
     // Cargar ventanillas desde la API
     async function cargarVentanillas() {
@@ -179,6 +212,15 @@
       document.getElementById('stat-llamados').textContent = turnos.filter(t => t.estado === 'llamado').length;
     }
 
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function renderTurnos() {
       const tbody = document.getElementById('turnos-tbody');
       const enEspera = turnos.filter(t => t.estado === 'esperando' || t.estado === 'llamado');
@@ -188,21 +230,33 @@
         return;
       }
 
-      tbody.innerHTML = enEspera.map((t, i) => `
+      tbody.innerHTML = enEspera.map((t, i) => {
+        const transferBtn = t.estado === 'esperando'
+          ? `<button class="btn btn-transferir" data-tid="${t.id}" data-tarea="${escHtml(t.area)}" onclick="abrirTransferir(this)">↔️ Transferir</button>`
+          : '';
+        return `
         <tr>
           <td>${i + 1}</td>
-          <td><strong>${t.numero}</strong></td>
-          <td>${t.area}</td>
+          <td><strong>${escHtml(t.numero)}</strong></td>
+          <td>${escHtml(t.area)}</td>
           <td>${new Date(t.fecha_hora).toLocaleTimeString('es-ES')}</td>
-          <td><span class="badge badge-${t.estado}">${t.estado}</span></td>
+          <td><span class="badge badge-${escHtml(t.estado)}">${escHtml(t.estado)}</span></td>
           <td class="acciones">
-            <button class="btn btn-llamar" onclick="llamarTurno(${t.id}, '${t.numero}', '${t.area}')">Llamar</button>
-            <button class="btn btn-repetir" onclick="repetirTurno(${t.id})">Repetir</button>
-            <button class="btn btn-atender" onclick="atenderTurno(${t.id})">Atender</button>
-            <button class="btn btn-transferir" onclick="transferirTurno(${t.id})">Transferir</button>
+            <button class="btn btn-llamar" data-tid="${t.id}" data-tnumero="${escHtml(t.numero)}" data-tarea="${escHtml(t.area)}" onclick="llamarTurnoBtn(this)">📣 Llamar</button>
+            <button class="btn btn-repetir" data-tid="${t.id}" onclick="repetirTurno(this.dataset.tid)">🔁 Repetir</button>
+            <button class="btn btn-atender" data-tid="${t.id}" onclick="atenderTurno(this.dataset.tid)">✅ Atender</button>
+            ${transferBtn}
+            <button class="btn btn-cancelar" data-tid="${t.id}" onclick="cancelarTurno(this.dataset.tid)">❌ Cancelar</button>
           </td>
-        </tr>
-      `).join('');
+        </tr>`;
+      }).join('');
+    }
+
+    async function llamarTurnoBtn(btn) {
+      const id = parseInt(btn.dataset.tid, 10);
+      const numero = btn.dataset.tnumero;
+      const area = btn.dataset.tarea;
+      await llamarTurno(id, numero, area);
     }
 
     async function llamarTurno(id, numero, area) {
@@ -231,15 +285,17 @@
     }
 
     function repetirTurno(id) {
-      const turno = turnos.find(t => t.id === id);
+      const numId = parseInt(id, 10);
+      const turno = turnos.find(t => t.id === numId);
       if (turno) socket.emit('repeat_turn', turno);
     }
 
     async function atenderTurno(id) {
+      const numId = parseInt(id, 10);
       try {
-        await fetch(`/api/turnos/${id}/atender`, { method: 'PUT' });
-        turnos = turnos.filter(t => t.id !== id);
-        if (turnoLlamadoActual && turnoLlamadoActual.id === id) {
+        await fetch(`/api/turnos/${numId}/atender`, { method: 'PUT' });
+        turnos = turnos.filter(t => t.id !== numId);
+        if (turnoLlamadoActual && turnoLlamadoActual.id === numId) {
           document.getElementById('turno-actual-card').style.display = 'none';
           turnoLlamadoActual = null;
         }
@@ -249,15 +305,76 @@
       } catch (e) { alert('Error al atender turno.'); }
     }
 
-    function transferirTurno(id) {
-      const nuevaArea = prompt('Ingrese el nombre del área destino:');
-      if (!nuevaArea) return;
-      alert(`Turno transferido a: ${nuevaArea} (funcionalidad en desarrollo)`);
+    async function cancelarTurno(id) {
+      const numId = parseInt(id, 10);
+      if (!confirm('¿Está seguro de cancelar este turno?')) return;
+      try {
+        const res = await fetch(`/api/turnos/${numId}/cancelar`, { method: 'PUT' });
+        if (!res.ok) { const e = await res.json(); alert('Error: ' + e.error); return; }
+        turnos = turnos.filter(t => t.id !== numId);
+        if (turnoLlamadoActual && turnoLlamadoActual.id === numId) {
+          document.getElementById('turno-actual-card').style.display = 'none';
+          turnoLlamadoActual = null;
+        }
+        socket.emit('cancel_turn', { id: numId });
+        renderTurnos();
+        actualizarStats();
+      } catch (e) { alert('Error al cancelar turno.'); }
+    }
+
+    function abrirTransferir(btn) {
+      const id = parseInt(btn.dataset.tid, 10);
+      const areaActual = btn.dataset.tarea;
+      turnoATransferir = id;
+      const sel = document.getElementById('transferir-area-sel');
+      sel.innerHTML = areasDisponibles
+        .filter(a => a.nombre !== areaActual)
+        .map(a => `<option value="${a.nombre}">${a.nombre}</option>`)
+        .join('');
+      document.getElementById('modal-transferir').classList.add('open');
+    }
+
+    function cerrarModalTransferir() {
+      document.getElementById('modal-transferir').classList.remove('open');
+      turnoATransferir = null;
+    }
+
+    async function confirmarTransferir() {
+      const area = document.getElementById('transferir-area-sel').value;
+      if (!area || !turnoATransferir) return;
+      try {
+        const res = await fetch(`/api/turnos/${turnoATransferir}/transferir`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ area })
+        });
+        if (!res.ok) { const e = await res.json(); alert('Error: ' + e.error); return; }
+        const turnoActualizado = await res.json();
+        const idx = turnos.findIndex(t => t.id === turnoATransferir);
+        if (idx !== -1) { turnos[idx] = turnoActualizado; }
+        socket.emit('transfer_turn', turnoActualizado);
+        cerrarModalTransferir();
+        renderTurnos();
+        actualizarStats();
+      } catch (e) { alert('Error al transferir turno.'); }
     }
 
     // Socket.IO eventos
     socket.on('turn_added', (turno) => {
-      turnos.push(turno);
+      if (!turnos.find(t => t.id === turno.id)) turnos.push(turno);
+      renderTurnos();
+      actualizarStats();
+    });
+
+    socket.on('turn_cancelled', (data) => {
+      turnos = turnos.filter(t => t.id !== data.id);
+      renderTurnos();
+      actualizarStats();
+    });
+
+    socket.on('turn_transferred', (turno) => {
+      const idx = turnos.findIndex(t => t.id === turno.id);
+      if (idx !== -1) { turnos[idx] = turno; } else { turnos.push(turno); }
       renderTurnos();
       actualizarStats();
     });

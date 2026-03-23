@@ -119,6 +119,29 @@ function initDatabase() {
         stmt.finalize();
       }
     });
+
+    // Tabla de sucursales
+    db.run(`CREATE TABLE IF NOT EXISTS sucursales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      activa INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS sucursal_usuarios (
+      sucursal_id INTEGER NOT NULL,
+      usuario_id INTEGER NOT NULL,
+      PRIMARY KEY (sucursal_id, usuario_id),
+      FOREIGN KEY (sucursal_id) REFERENCES sucursales(id),
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )`);
+
+    // Sembrar sucursal por defecto
+    db.get('SELECT COUNT(*) as count FROM sucursales', (err, row) => {
+      if (!err && row.count === 0) {
+        db.run("INSERT INTO sucursales (nombre) VALUES ('Sucursal Principal')");
+      }
+    });
   });
 }
 
