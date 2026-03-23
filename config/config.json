@@ -1,0 +1,20 @@
+{
+  "hospital": {
+    "nombre": "Hospital General",
+    "logo": "",
+    "colorPrimario": "#0d6efd",
+    "colorSecundario": "#198754",
+    "videoYoutube": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    "mensaje": "Bienvenido al sistema de turnos electrónico",
+    "ventanillas": 3
+  },
+  "areas": [
+    { "id": 1, "nombre": "Emergencias", "prefijo": "E", "color": "#dc3545" },
+    { "id": 2, "nombre": "UCI", "prefijo": "U", "color": "#6f42c1" },
+    { "id": 3, "nombre": "Pediatría", "prefijo": "P", "color": "#fd7e14" },
+    { "id": 4, "nombre": "Facturación", "prefijo": "F", "color": "#0dcaf0" },
+    { "id": 5, "nombre": "Consulta", "prefijo": "C", "color": "#198754" },
+    { "id": 6, "nombre": "Laboratorio", "prefijo": "L", "color": "#6610f2" },
+    { "id": 7, "nombre": "Farmacia", "prefijo": "A", "color": "#ffc107" }
+  ]
+}

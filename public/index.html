@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-TURNS — Sistema de Turnos</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0d6efd 0%, #198754 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .logo { font-size: 4rem; font-weight: 900; letter-spacing: 4px; margin-bottom: 0.5rem; }
+    .subtitle { font-size: 1.2rem; opacity: 0.85; margin-bottom: 3rem; }
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+      max-width: 900px;
+    }
+    .card {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 220px;
+      text-align: center;
+      text-decoration: none;
+      color: #fff;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .card:hover { transform: translateY(-6px); background: rgba(255,255,255,0.25); }
+    .card .icon { font-size: 3rem; margin-bottom: 0.75rem; }
+    .card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .card p { font-size: 0.85rem; opacity: 0.85; }
+    footer { margin-top: 3rem; opacity: 0.6; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="logo">E-TURNS</div>
+  <div class="subtitle">Sistema Electrónico de Gestión de Turnos</div>
+  <div class="cards">
+    <a href="/kiosco" class="card">
+      <div class="icon">🖥️</div>
+      <h3>Kiosco</h3>
+      <p>Solicita tu turno seleccionando el área de atención</p>
+    </a>
+    <a href="/panel" class="card">
+      <div class="icon">👩‍💼</div>
+      <h3>Panel Operador</h3>
+      <p>Llama, atiende y gestiona los turnos en espera</p>
+    </a>
+    <a href="/pantalla" class="card">
+      <div class="icon">📺</div>
+      <h3>Pantalla Pública</h3>
+      <p>Visualización del turno actual con anuncio de voz</p>
+    </a>
+    <a href="/admin" class="card">
+      <div class="icon">⚙️</div>
+      <h3>Administración</h3>
+      <p>Configura el hospital, áreas, ventanillas y más</p>
+    </a>
+    <a href="/stats" class="card">
+      <div class="icon">📊</div>
+      <h3>Estadísticas</h3>
+      <p>Dashboard de turnos atendidos y tiempos de espera</p>
+    </a>
+  </div>
+  <footer>E-TURNS &copy; 2024 — WinDevDr</footer>
+</body>
+</html>
