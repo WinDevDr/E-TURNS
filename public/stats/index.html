@@ -58,9 +58,13 @@
 <body>
   <header>
     <h1>📊 Estadísticas — E-TURNS</h1>
-    <div>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
       <span class="actualiza" id="ultima-actualizacion">Cargando...</span>
       <button class="btn-refresh" onclick="cargarStats()">🔄 Actualizar</button>
+      <a href="/home" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;font-size:0.9rem;font-weight:600">🏠 Inicio</a>
+      <form action="/auth/logout" method="POST" style="display:inline">
+        <button type="submit" style="background:rgba(220,53,69,0.85);color:#fff;border:none;border-radius:8px;padding:0.4rem 0.9rem;cursor:pointer;font-size:0.9rem;font-weight:600">🚪 Cerrar Sesión</button>
+      </form>
     </div>
   </header>
 

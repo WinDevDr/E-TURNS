@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'e-turns.db');
 
@@ -18,8 +19,12 @@ function initDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL,
       prefijo TEXT NOT NULL,
-      color TEXT DEFAULT '#0d6efd'
+      color TEXT DEFAULT '#0d6efd',
+      logo_url TEXT
     )`);
+
+    // Intentar agregar columna logo_url a areas si no existe (para BDs ya creadas)
+    db.run(`ALTER TABLE areas ADD COLUMN logo_url TEXT`, () => {});
 
     db.run(`CREATE TABLE IF NOT EXISTS turnos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,9 +44,20 @@ function initDatabase() {
 
     db.run(`CREATE TABLE IF NOT EXISTS usuarios (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      rol TEXT NOT NULL DEFAULT 'operador',
+      nombre TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS ventanillas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL,
-      rol TEXT DEFAULT 'operador',
-      ventanilla TEXT
+      usuario_id INTEGER,
+      area_id INTEGER,
+      activa INTEGER DEFAULT 1,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     )`);
 
     // Insertar áreas por defecto si no existen
@@ -65,6 +81,40 @@ function initDatabase() {
         const stmt = db.prepare('INSERT INTO configuracion (clave, valor) VALUES (?, ?)');
         Object.entries(hospital).forEach(([clave, valor]) => {
           stmt.run(clave, String(valor));
+        });
+        stmt.finalize();
+      }
+    });
+
+    // Sembrar usuarios por defecto
+    db.get('SELECT COUNT(*) as count FROM usuarios', (err, row) => {
+      if (!err && row.count === 0) {
+        const saltRounds = 10;
+        bcrypt.hash('admin123', saltRounds, (err, hashAdmin) => {
+          if (err) return;
+          bcrypt.hash('op123', saltRounds, (err, hashOp) => {
+            if (err) return;
+            db.run(
+              'INSERT INTO usuarios (username, password, rol, nombre) VALUES (?, ?, ?, ?)',
+              ['admin', hashAdmin, 'admin', 'Administrador'],
+              () => {}
+            );
+            db.run(
+              'INSERT INTO usuarios (username, password, rol, nombre) VALUES (?, ?, ?, ?)',
+              ['operador', hashOp, 'operador', 'Operador'],
+              () => {}
+            );
+          });
+        });
+      }
+    });
+
+    // Sembrar ventanillas por defecto
+    db.get('SELECT COUNT(*) as count FROM ventanillas', (err, row) => {
+      if (!err && row.count === 0) {
+        const stmt = db.prepare('INSERT INTO ventanillas (nombre) VALUES (?)');
+        ['Ventanilla 1', 'Ventanilla 2', 'Ventanilla 3'].forEach(nombre => {
+          stmt.run(nombre);
         });
         stmt.finalize();
       }

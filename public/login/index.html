@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión — E-TURNS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0d6efd 0%, #198754 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-container {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 420px;
+    }
+    .logo-area {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .logo-area .icono {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .logo-area h1 {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #0d6efd;
+      letter-spacing: -1px;
+    }
+    .logo-area p {
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 0.4rem;
+      font-size: 0.95rem;
+    }
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid #dee2e6;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      color: #333;
+      background: #fafafa;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 3px rgba(13,110,253,0.12);
+      background: #fff;
+    }
+    .btn-login {
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(90deg, #0d6efd, #198754);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 0.5rem;
+    }
+    .btn-login:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-login:active { transform: translateY(0); }
+    .alert {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .alert-error { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+    .footer-info {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+    .rol-badge {
+      display: inline-block;
+      background: #e8f4fd;
+      color: #0d6efd;
+      border-radius: 20px;
+      padding: 0.15rem 0.7rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+    .sistema-logo {
+      max-height: 70px;
+      max-width: 200px;
+      margin-bottom: 0.75rem;
+      object-fit: contain;
+    }
+    #logo-wrapper { min-height: 0; }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo-area">
+      <div id="logo-wrapper"></div>
+      <span class="icono">🏥</span>
+      <h1>E-TURNS</h1>
+      <p id="nombre-hospital">Sistema Electrónico de Turnos</p>
+    </div>
+
+    <div class="alert alert-error" id="alerta-error"></div>
+
+    <form id="form-login" autocomplete="off">
+      <div class="form-group">
+        <label for="username">👤 Usuario</label>
+        <input type="text" id="username" name="username" placeholder="Ingrese su usuario" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">🔒 Contraseña</label>
+        <input type="password" id="password" name="password" placeholder="Ingrese su contraseña" required>
+      </div>
+      <div class="form-group">
+        <label for="rol">🎭 Rol</label>
+        <select id="rol" name="rol" required>
+          <option value="">— Seleccione su rol —</option>
+          <option value="admin">Administrador</option>
+          <option value="operador">Operador</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-login">🔑 Ingresar</button>
+    </form>
+
+    <div class="footer-info">
+      E-TURNS &copy; 2024 · Sistema de Gestión de Turnos
+    </div>
+  </div>
+
+  <script>
+    // Cargar info del hospital
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(config => {
+        if (config.nombre) {
+          document.getElementById('nombre-hospital').textContent = config.nombre;
+          document.title = 'Iniciar Sesión — ' + config.nombre;
+        }
+        if (config.logo) {
+          const wrapper = document.getElementById('logo-wrapper');
+          const img = document.createElement('img');
+          img.src = config.logo;
+          img.className = 'sistema-logo';
+          img.alt = 'Logo';
+          img.onerror = () => { wrapper.innerHTML = ''; };
+          wrapper.appendChild(img);
+        }
+      })
+      .catch(() => {});
+
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alerta = document.getElementById('alerta-error');
+      alerta.style.display = 'none';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const rol = document.getElementById('rol').value;
+
+      if (!username || !password || !rol) {
+        alerta.textContent = 'Por favor complete todos los campos.';
+        alerta.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, rol })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          alerta.textContent = data.error || 'Credenciales inválidas.';
+          alerta.style.display = 'block';
+          return;
+        }
+
+        // Redirigir según rol
+        if (data.rol === 'admin') {
+          window.location.href = '/home';
+        } else {
+          window.location.href = '/panel';
+        }
+      } catch (err) {
+        alerta.textContent = 'Error de conexión. Intente nuevamente.';
+        alerta.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

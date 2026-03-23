@@ -94,6 +94,9 @@
         <option value="Ventanilla 2">Ventanilla 2</option>
         <option value="Ventanilla 3">Ventanilla 3</option>
       </select>
+      <form action="/auth/logout" method="POST" style="display:inline;margin-left:0.5rem">
+        <button type="submit" style="background:rgba(220,53,69,0.85);color:#fff;border:none;border-radius:8px;padding:0.4rem 0.9rem;cursor:pointer;font-size:0.9rem;font-weight:600">🚪 Salir</button>
+      </form>
     </div>
   </header>
 
@@ -140,6 +143,19 @@
     const socket = io();
     let turnos = [];
     let turnoLlamadoActual = null;
+
+    // Cargar ventanillas desde la API
+    async function cargarVentanillas() {
+      try {
+        const res = await fetch('/api/ventanillas');
+        const ventanillas = await res.json();
+        const sel = document.getElementById('ventanilla-sel');
+        if (ventanillas.length > 0) {
+          sel.innerHTML = ventanillas.map(v => `<option value="${v.nombre}">${v.nombre}</option>`).join('');
+        }
+      } catch (e) { console.error('Error al cargar ventanillas:', e); }
+    }
+    cargarVentanillas();
 
     async function cargarTurnos() {
       try {

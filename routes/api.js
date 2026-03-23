@@ -1,6 +1,59 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { requireAuth, requireAdmin } = require('../middleware/authMiddleware');
+
+// Sanitizar ID numérico para evitar path traversal
+function sanitizeNumericId(id) {
+  const num = parseInt(id, 10);
+  if (isNaN(num) || num <= 0) return null;
+  return String(num);
+}
+
+// Configuración multer para logo del sistema
+const storageLogoSistema = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '..', 'public', 'uploads', 'logo');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `logo${ext}`);
+  }
+});
+
+// Configuración multer para logos de áreas
+const storageLogoArea = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const safeId = sanitizeNumericId(req.params.id);
+    if (!safeId) return cb(new Error('ID de área inválido.'));
+    const dir = path.join(__dirname, '..', 'public', 'uploads', 'areas', safeId);
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `logo${ext}`);
+  }
+});
+
+function fileFilter(req, file, cb) {
+  // SVG excluido por riesgo de XSS (puede contener JavaScript)
+  const allowed = /^(jpeg|jpg|png|gif|webp)$/;
+  const ext = path.extname(file.originalname).toLowerCase().slice(1);
+  if (allowed.test(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Solo se permiten imágenes (jpg, png, gif, webp).'));
+  }
+}
+
+const uploadLogoSistema = multer({ storage: storageLogoSistema, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+const uploadLogoArea = multer({ storage: storageLogoArea, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
 // GET /api/turnos
 router.get('/turnos', (req, res) => {
@@ -95,7 +148,7 @@ router.get('/areas', (req, res) => {
 });
 
 // POST /api/areas
-router.post('/areas', (req, res) => {
+router.post('/areas', requireAuth, requireAdmin, (req, res) => {
   const { nombre, prefijo, color } = req.body;
   if (!nombre || !prefijo) return res.status(400).json({ error: 'nombre y prefijo son requeridos.' });
 
@@ -108,6 +161,122 @@ router.post('/areas', (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.status(201).json(area);
       });
+    }
+  );
+});
+
+// PUT /api/areas/:id/logo — subir logo de área
+router.put('/areas/:id/logo', requireAuth, requireAdmin, uploadLogoArea.single('logo'), (req, res) => {
+  const safeId = sanitizeNumericId(req.params.id);
+  if (!safeId) return res.status(400).json({ error: 'ID de área inválido.' });
+  if (!req.file) return res.status(400).json({ error: 'No se recibió ninguna imagen.' });
+
+  const logoUrl = `/uploads/areas/${safeId}/${req.file.filename}`;
+  db.run('UPDATE areas SET logo_url = ? WHERE id = ?', [logoUrl, safeId], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Área no encontrada.' });
+    res.json({ mensaje: 'Logo actualizado correctamente.', logo_url: logoUrl });
+  });
+});
+
+// DELETE /api/areas/:id — eliminar área
+router.delete('/areas/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  db.run('DELETE FROM areas WHERE id = ?', [id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Área no encontrada.' });
+    res.json({ mensaje: 'Área eliminada correctamente.' });
+  });
+});
+
+// GET /api/ventanillas
+router.get('/ventanillas', requireAuth, (req, res) => {
+  db.all(
+    `SELECT v.*, u.username, u.nombre as usuario_nombre
+     FROM ventanillas v
+     LEFT JOIN usuarios u ON v.usuario_id = u.id
+     ORDER BY v.id ASC`,
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// POST /api/ventanillas
+router.post('/ventanillas', requireAuth, requireAdmin, (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre) return res.status(400).json({ error: 'El nombre es requerido.' });
+
+  db.run('INSERT INTO ventanillas (nombre) VALUES (?)', [nombre], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    db.get(
+      `SELECT v.*, u.username, u.nombre as usuario_nombre
+       FROM ventanillas v LEFT JOIN usuarios u ON v.usuario_id = u.id
+       WHERE v.id = ?`,
+      [this.lastID],
+      (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json(row);
+      }
+    );
+  });
+});
+
+// PUT /api/ventanillas/:id — actualizar nombre
+router.put('/ventanillas/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { nombre } = req.body;
+  if (!nombre) return res.status(400).json({ error: 'El nombre es requerido.' });
+
+  db.run('UPDATE ventanillas SET nombre = ? WHERE id = ?', [nombre, id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Ventanilla no encontrada.' });
+    res.json({ mensaje: 'Ventanilla actualizada correctamente.' });
+  });
+});
+
+// PUT /api/ventanillas/:id/usuario — asignar usuario
+router.put('/ventanillas/:id/usuario', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { usuario_id } = req.body;
+
+  db.run('UPDATE ventanillas SET usuario_id = ? WHERE id = ?', [usuario_id || null, id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Ventanilla no encontrada.' });
+    res.json({ mensaje: 'Usuario asignado correctamente.' });
+  });
+});
+
+// DELETE /api/ventanillas/:id
+router.delete('/ventanillas/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  db.run('DELETE FROM ventanillas WHERE id = ?', [id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Ventanilla no encontrada.' });
+    res.json({ mensaje: 'Ventanilla eliminada correctamente.' });
+  });
+});
+
+// GET /api/usuarios — listar operadores (para asignación de ventanillas)
+router.get('/usuarios', requireAuth, requireAdmin, (req, res) => {
+  db.all("SELECT id, username, nombre, rol FROM usuarios WHERE rol = 'operador' ORDER BY nombre ASC", (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// PUT /api/config/logo — subir logo del sistema
+router.put('/config/logo', requireAuth, requireAdmin, uploadLogoSistema.single('logo'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No se recibió ninguna imagen.' });
+
+  const logoUrl = `/uploads/logo/${req.file.filename}`;
+  db.run(
+    "INSERT INTO configuracion (clave, valor) VALUES ('logo', ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor",
+    [logoUrl],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ mensaje: 'Logo actualizado correctamente.', logo_url: logoUrl });
     }
   );
 });

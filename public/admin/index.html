@@ -11,10 +11,62 @@
       background: linear-gradient(90deg, #0d6efd, #198754);
       color: #fff;
       padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
-    header h1 { font-size: 1.5rem; font-weight: 900; }
-    header p { opacity: 0.85; font-size: 0.9rem; }
-    .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    header h1 { font-size: 1.4rem; font-weight: 900; }
+    header p { opacity: 0.85; font-size: 0.85rem; }
+    .header-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .btn-home {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 8px;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .btn-logout {
+      background: rgba(220,53,69,0.8);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .btn-home:hover { background: rgba(255,255,255,0.25); }
+    .btn-logout:hover { background: rgba(220,53,69,1); }
+    .tabs-nav {
+      background: #fff;
+      border-bottom: 2px solid #e9ecef;
+      display: flex;
+      padding: 0 2rem;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 1rem 1.5rem;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #666;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active { color: #0d6efd; border-bottom-color: #0d6efd; }
+    .tab-btn:hover { color: #0d6efd; }
+    .container { max-width: 950px; margin: 2rem auto; padding: 0 1rem; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
     .card {
       background: #fff;
       border-radius: 12px;
@@ -22,127 +74,258 @@
       padding: 2rem;
       margin-bottom: 2rem;
     }
-    .card h2 { font-size: 1.2rem; color: #0d6efd; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e9ecef; }
+    .card h2 { font-size: 1.15rem; color: #0d6efd; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e9ecef; }
     .form-group { margin-bottom: 1.2rem; }
     label { display: block; font-weight: 600; color: #444; margin-bottom: 0.4rem; font-size: 0.95rem; }
-    input[type="text"], input[type="url"], input[type="number"], input[type="color"] {
+    input[type="text"], input[type="url"], input[type="number"], select {
       width: 100%;
-      padding: 0.6rem 0.9rem;
+      padding: 0.65rem 0.9rem;
       border: 1.5px solid #dee2e6;
       border-radius: 8px;
       font-size: 1rem;
       transition: border-color 0.2s;
+      background: #fafafa;
     }
-    input:focus { outline: none; border-color: #0d6efd; }
+    input[type="color"] { width: 60px; height: 40px; padding: 2px; cursor: pointer; border: 1.5px solid #dee2e6; border-radius: 8px; }
+    input[type="file"] { width: 100%; padding: 0.4rem 0.9rem; border: 1.5px solid #dee2e6; border-radius: 8px; font-size: 0.95rem; background: #fafafa; }
+    input:focus, select:focus { outline: none; border-color: #0d6efd; background: #fff; }
     .color-row { display: flex; align-items: center; gap: 1rem; }
-    .color-row input[type="color"] { width: 60px; height: 40px; padding: 2px; cursor: pointer; }
     .color-row input[type="text"] { flex: 1; }
-    .btn { padding: 0.65rem 1.5rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; transition: opacity 0.15s; }
+    .btn { padding: 0.6rem 1.4rem; border: none; border-radius: 8px; font-size: 0.95rem; cursor: pointer; font-weight: 600; transition: opacity 0.15s; display: inline-flex; align-items: center; gap: 0.3rem; }
     .btn-primary { background: #0d6efd; color: #fff; }
-    .btn-danger { background: #dc3545; color: #fff; font-size: 0.85rem; padding: 0.35rem 0.9rem; }
+    .btn-danger { background: #dc3545; color: #fff; font-size: 0.85rem; padding: 0.35rem 0.85rem; }
+    .btn-warning { background: #fd7e14; color: #fff; font-size: 0.85rem; padding: 0.35rem 0.85rem; }
+    .btn-secondary { background: #6c757d; color: #fff; font-size: 0.85rem; padding: 0.35rem 0.85rem; }
+    .btn-success { background: #198754; color: #fff; font-size: 0.85rem; padding: 0.35rem 0.85rem; }
     .btn:hover { opacity: 0.85; }
     .alert { padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 600; }
     .alert-success { background: #d1e7dd; color: #0a3622; }
     .alert-error { background: #f8d7da; color: #842029; }
-    #areas-lista { margin-top: 1rem; }
-    .area-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.6rem 0;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .area-item .dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
-    .area-item span { flex: 1; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+    .logo-preview { max-height: 100px; max-width: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #dee2e6; margin-top: 0.5rem; display: none; }
+    .area-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; }
+    .area-item:last-child { border-bottom: none; }
+    .area-dot { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
+    .area-logo { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; border: 1px solid #e9ecef; background: #f8f9fa; }
+    .area-logo-placeholder { width: 40px; height: 40px; border-radius: 6px; border: 1px dashed #dee2e6; background: #f8f9fa; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #bbb; }
+    .area-info { flex: 1; min-width: 120px; }
+    .area-info strong { display: block; font-size: 0.95rem; }
+    .area-info small { color: #888; font-size: 0.82rem; }
+    .area-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+    .ventanilla-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; }
+    .ventanilla-item:last-child { border-bottom: none; }
+    .ventanilla-num { width: 36px; height: 36px; background: #0d6efd; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; }
+    .ventanilla-info { flex: 1; min-width: 120px; }
+    .ventanilla-info strong { display: block; font-size: 0.95rem; }
+    .ventanilla-info small { color: #888; font-size: 0.82rem; }
+    .ventanilla-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 2rem; width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .modal h3 { font-size: 1.1rem; color: #0d6efd; margin-bottom: 1.25rem; }
+    .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; justify-content: flex-end; }
+    .btn-outline { background: #fff; color: #555; border: 1.5px solid #dee2e6; padding: 0.5rem 1.1rem; border-radius: 8px; font-size: 0.95rem; cursor: pointer; font-weight: 600; }
+    .btn-outline:hover { background: #f0f4f8; }
   </style>
 </head>
 <body>
   <header>
-    <h1>⚙️ Panel de Administración — E-TURNS</h1>
-    <p>Configure el sistema de turnos del hospital</p>
+    <div>
+      <h1>⚙️ Panel de Administración — E-TURNS</h1>
+      <p>Configure el sistema de turnos</p>
+    </div>
+    <div class="header-actions">
+      <a href="/home" class="btn-home">🏠 Inicio</a>
+      <form action="/auth/logout" method="POST" style="display:inline">
+        <button type="submit" class="btn-logout">🚪 Cerrar Sesión</button>
+      </form>
+    </div>
   </header>
+
+  <div class="tabs-nav">
+    <button class="tab-btn active" id="tbtn-config" onclick="mostrarTab('config', this)">🏥 Configuración General</button>
+    <button class="tab-btn" id="tbtn-areas" onclick="mostrarTab('areas', this)">🏷️ Gestión de Áreas</button>
+    <button class="tab-btn" id="tbtn-ventanillas" onclick="mostrarTab('ventanillas', this)">🪟 Gestión de Ventanillas</button>
+  </div>
 
   <div class="container">
     <div id="alerta" style="display:none"></div>
 
-    <!-- Configuración del Hospital -->
-    <div class="card">
-      <h2>🏥 Configuración del Hospital</h2>
-      <form id="form-config">
+    <!-- TAB: Configuración General -->
+    <div class="tab-panel active" id="tab-config">
+      <div class="card">
+        <h2>🖼️ Logo del Sistema</h2>
         <div class="form-group">
-          <label>Nombre del Hospital</label>
-          <input type="text" id="conf-nombre" placeholder="Ej: Hospital General">
+          <label>Logo actual</label>
+          <img id="logo-preview-sistema" class="logo-preview" alt="Logo del sistema">
+          <div id="logo-no-img" style="color:#aaa;font-size:0.9rem;margin-top:0.3rem">Sin logo configurado</div>
         </div>
         <div class="form-group">
-          <label>URL del Logo</label>
-          <input type="url" id="conf-logo" placeholder="https://...">
+          <label>Subir nuevo logo (JPG, PNG, SVG)</label>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
+            <input type="file" id="logo-sistema-file" accept="image/*" style="flex:1">
+            <button class="btn btn-primary" onclick="subirLogoSistema()">📤 Subir Logo</button>
+          </div>
         </div>
-        <div class="row">
+      </div>
+
+      <div class="card">
+        <h2>🏥 Datos del Hospital</h2>
+        <form id="form-config">
           <div class="form-group">
-            <label>Color Primario</label>
-            <div class="color-row">
-              <input type="color" id="conf-colorPrimario-picker" value="#0d6efd">
-              <input type="text" id="conf-colorPrimario" value="#0d6efd">
+            <label>Nombre del Hospital / Institución</label>
+            <input type="text" id="conf-nombre" placeholder="Ej: Hospital General">
+          </div>
+          <div class="row">
+            <div class="form-group">
+              <label>Color Primario</label>
+              <div class="color-row">
+                <input type="color" id="conf-colorPrimario-picker" value="#0d6efd">
+                <input type="text" id="conf-colorPrimario" value="#0d6efd">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Color Secundario</label>
+              <div class="color-row">
+                <input type="color" id="conf-colorSecundario-picker" value="#198754">
+                <input type="text" id="conf-colorSecundario" value="#198754">
+              </div>
             </div>
           </div>
           <div class="form-group">
-            <label>Color Secundario</label>
-            <div class="color-row">
-              <input type="color" id="conf-colorSecundario-picker" value="#198754">
-              <input type="text" id="conf-colorSecundario" value="#198754">
-            </div>
+            <label>URL de Video YouTube (embed)</label>
+            <input type="url" id="conf-videoYoutube" placeholder="https://www.youtube.com/embed/...">
           </div>
-        </div>
-        <div class="form-group">
-          <label>URL de Video YouTube (embed)</label>
-          <input type="url" id="conf-videoYoutube" placeholder="https://www.youtube.com/embed/...">
-        </div>
-        <div class="form-group">
-          <label>Mensaje en Pantalla</label>
-          <input type="text" id="conf-mensaje" placeholder="Bienvenido al sistema de turnos">
-        </div>
-        <div class="form-group">
-          <label>Número de Ventanillas</label>
-          <input type="number" id="conf-ventanillas" min="1" max="20" value="3">
-        </div>
-        <button type="submit" class="btn btn-primary">💾 Guardar Configuración</button>
-      </form>
+          <div class="form-group">
+            <label>Mensaje en Pantalla</label>
+            <input type="text" id="conf-mensaje" placeholder="Bienvenido al sistema de turnos">
+          </div>
+          <button type="submit" class="btn btn-primary">💾 Guardar Configuración</button>
+        </form>
+      </div>
     </div>
 
-    <!-- Gestión de Áreas -->
-    <div class="card">
-      <h2>🏷️ Gestión de Áreas</h2>
-      <form id="form-area">
-        <div class="row">
-          <div class="form-group">
-            <label>Nombre del Área</label>
-            <input type="text" id="area-nombre" placeholder="Ej: Cardiología">
+    <!-- TAB: Gestión de Áreas -->
+    <div class="tab-panel" id="tab-areas">
+      <div class="card">
+        <h2>➕ Agregar Nueva Área</h2>
+        <form id="form-area">
+          <div class="row">
+            <div class="form-group">
+              <label>Nombre del Área</label>
+              <input type="text" id="area-nombre" placeholder="Ej: Cardiología" required>
+            </div>
+            <div class="form-group">
+              <label>Prefijo (1–2 letras)</label>
+              <input type="text" id="area-prefijo" placeholder="Ej: K" maxlength="2" required>
+            </div>
           </div>
           <div class="form-group">
-            <label>Prefijo (1 letra)</label>
-            <input type="text" id="area-prefijo" placeholder="Ej: K" maxlength="2">
+            <label>Color</label>
+            <div class="color-row">
+              <input type="color" id="area-color-picker" value="#0d6efd">
+              <input type="text" id="area-color" value="#0d6efd">
+            </div>
           </div>
-        </div>
-        <div class="form-group">
-          <label>Color</label>
-          <div class="color-row">
-            <input type="color" id="area-color-picker" value="#0d6efd">
-            <input type="text" id="area-color" value="#0d6efd">
+          <div class="form-group">
+            <label>Logo del área (opcional)</label>
+            <input type="file" id="area-logo-file" accept="image/*">
           </div>
-        </div>
-        <button type="submit" class="btn btn-primary">➕ Agregar Área</button>
-      </form>
+          <button type="submit" class="btn btn-primary">➕ Agregar Área</button>
+        </form>
+      </div>
 
-      <div id="areas-lista">
-        <p style="color:#888;margin-top:1rem">Cargando áreas...</p>
+      <div class="card">
+        <h2>📋 Áreas Registradas</h2>
+        <div id="areas-lista"><p style="color:#888">Cargando áreas...</p></div>
+      </div>
+    </div>
+
+    <!-- TAB: Gestión de Ventanillas -->
+    <div class="tab-panel" id="tab-ventanillas">
+      <div class="card">
+        <h2>➕ Agregar Ventanilla</h2>
+        <form id="form-ventanilla" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group" style="flex:1;margin:0">
+            <label>Nombre de la Ventanilla</label>
+            <input type="text" id="ventanilla-nombre" placeholder="Ej: Caja Principal" required>
+          </div>
+          <button type="submit" class="btn btn-primary">➕ Agregar</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>🪟 Ventanillas Registradas</h2>
+        <div id="ventanillas-lista"><p style="color:#888">Cargando ventanillas...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Renombrar ventanilla -->
+  <div class="modal-overlay" id="modal-renombrar">
+    <div class="modal">
+      <h3>✏️ Cambiar Nombre de Ventanilla</h3>
+      <div class="form-group">
+        <label>Nuevo nombre</label>
+        <input type="text" id="renombrar-input" placeholder="Ej: Ventanilla Principal">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="cerrarModal('modal-renombrar')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarRenombrar()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Asignar usuario -->
+  <div class="modal-overlay" id="modal-asignar">
+    <div class="modal">
+      <h3>👤 Asignar Operador a Ventanilla</h3>
+      <div class="form-group">
+        <label>Seleccionar Operador</label>
+        <select id="asignar-usuario-sel">
+          <option value="">— Sin asignar —</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="cerrarModal('modal-asignar')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarAsignar()">✅ Asignar</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Sincronizar color pickers
+    let ventanillaEditandoId = null;
+    let ventanillaAsignandoId = null;
+    let operadores = [];
+
+    // Escapar HTML para prevenir XSS al insertar contenido en innerHTML
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function mostrarTab(tab, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    function mostrarAlerta(msg, tipo) {
+      const el = document.getElementById('alerta');
+      el.className = 'alert alert-' + tipo;
+      el.textContent = msg;
+      el.style.display = 'block';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    // ---- CONFIG ----
     function syncColors(pickerId, textId) {
       const picker = document.getElementById(pickerId);
       const text = document.getElementById(textId);
@@ -153,21 +336,11 @@
     syncColors('conf-colorSecundario-picker', 'conf-colorSecundario');
     syncColors('area-color-picker', 'area-color');
 
-    function mostrarAlerta(msg, tipo) {
-      const el = document.getElementById('alerta');
-      el.className = `alert alert-${tipo}`;
-      el.textContent = msg;
-      el.style.display = 'block';
-      setTimeout(() => { el.style.display = 'none'; }, 4000);
-    }
-
-    // Cargar configuración
     async function cargarConfig() {
       try {
         const res = await fetch('/api/config');
         const config = await res.json();
         if (config.nombre) document.getElementById('conf-nombre').value = config.nombre;
-        if (config.logo) document.getElementById('conf-logo').value = config.logo;
         if (config.colorPrimario) {
           document.getElementById('conf-colorPrimario').value = config.colorPrimario;
           document.getElementById('conf-colorPrimario-picker').value = config.colorPrimario;
@@ -178,69 +351,130 @@
         }
         if (config.videoYoutube) document.getElementById('conf-videoYoutube').value = config.videoYoutube;
         if (config.mensaje) document.getElementById('conf-mensaje').value = config.mensaje;
-        if (config.ventanillas) document.getElementById('conf-ventanillas').value = config.ventanillas;
+        const preview = document.getElementById('logo-preview-sistema');
+        if (config.logo) {
+          preview.src = config.logo;
+          preview.style.display = 'block';
+          document.getElementById('logo-no-img').style.display = 'none';
+        }
       } catch (e) { mostrarAlerta('Error al cargar configuración.', 'error'); }
     }
 
-    // Guardar configuración
     document.getElementById('form-config').addEventListener('submit', async (e) => {
       e.preventDefault();
       const datos = {
         nombre: document.getElementById('conf-nombre').value,
-        logo: document.getElementById('conf-logo').value,
         colorPrimario: document.getElementById('conf-colorPrimario').value,
         colorSecundario: document.getElementById('conf-colorSecundario').value,
         videoYoutube: document.getElementById('conf-videoYoutube').value,
-        mensaje: document.getElementById('conf-mensaje').value,
-        ventanillas: document.getElementById('conf-ventanillas').value
+        mensaje: document.getElementById('conf-mensaje').value
       };
       try {
-        const res = await fetch('/api/config', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(datos)
-        });
+        const res = await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
         const result = await res.json();
         mostrarAlerta(result.mensaje || 'Configuración guardada.', 'success');
       } catch (e) { mostrarAlerta('Error al guardar configuración.', 'error'); }
     });
 
-    // Cargar áreas
+    async function subirLogoSistema() {
+      const fileInput = document.getElementById('logo-sistema-file');
+      if (!fileInput.files || !fileInput.files[0]) { mostrarAlerta('Seleccione una imagen.', 'error'); return; }
+      const formData = new FormData();
+      formData.append('logo', fileInput.files[0]);
+      try {
+        const res = await fetch('/api/config/logo', { method: 'PUT', body: formData });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al subir logo.', 'error'); return; }
+        mostrarAlerta('Logo del sistema actualizado.', 'success');
+        const preview = document.getElementById('logo-preview-sistema');
+        preview.src = result.logo_url + '?t=' + Date.now();
+        preview.style.display = 'block';
+        document.getElementById('logo-no-img').style.display = 'none';
+        fileInput.value = '';
+      } catch (e) { mostrarAlerta('Error al subir logo.', 'error'); }
+    }
+
+    // ---- ÁREAS ----
     async function cargarAreas() {
       try {
         const res = await fetch('/api/areas');
         const areas = await res.json();
         const lista = document.getElementById('areas-lista');
-        if (areas.length === 0) {
-          lista.innerHTML = '<p style="color:#888;margin-top:1rem">No hay áreas registradas.</p>';
-          return;
-        }
-        lista.innerHTML = '<h4 style="color:#555;margin-top:1.5rem;margin-bottom:0.5rem">Áreas registradas:</h4>' +
-          areas.map(a => `
-            <div class="area-item">
-              <div class="dot" style="background:${a.color}"></div>
-              <span><strong>${a.prefijo}</strong> — ${a.nombre}</span>
-              <span style="color:#888;font-size:0.85rem">${a.color}</span>
-            </div>
-          `).join('');
+        if (!areas.length) { lista.innerHTML = '<p style="color:#888">No hay áreas registradas.</p>'; return; }
+        lista.innerHTML = areas.map(a => {
+          const logoHtml = a.logo_url
+            ? `<img src="${escHtml(a.logo_url)}" class="area-logo" alt="Logo ${escHtml(a.nombre)}" onerror="this.style.display='none'">`
+            : `<div class="area-logo-placeholder">🖼️</div>`;
+          return `
+            <div class="area-item" id="area-item-${a.id}" data-area-id="${a.id}" data-area-nombre="${escHtml(a.nombre)}">
+              <div class="area-dot" style="background:${escHtml(a.color)}"></div>
+              ${logoHtml}
+              <div class="area-info">
+                <strong>${escHtml(a.nombre)}</strong>
+                <small>Prefijo: <b>${escHtml(a.prefijo)}</b> · Color: ${escHtml(a.color)}</small>
+              </div>
+              <div class="area-actions">
+                <label class="btn btn-warning" style="cursor:pointer" title="Cambiar logo del área">
+                  🖼️ Logo
+                  <input type="file" accept="image/*" style="display:none" data-area-id="${a.id}" onchange="subirLogoArea(this.dataset.areaId, this)">
+                </label>
+                <button class="btn btn-danger" data-area-id="${a.id}" onclick="eliminarAreaBtn(this)">🗑️ Eliminar</button>
+              </div>
+            </div>`;
+        }).join('');
       } catch (e) { document.getElementById('areas-lista').innerHTML = '<p style="color:red">Error al cargar áreas.</p>'; }
     }
 
-    // Agregar área
+    function eliminarAreaBtn(btn) {
+      const item = btn.closest('.area-item');
+      const id = item.dataset.areaId;
+      const nombre = item.dataset.areaNombre;
+      eliminarArea(id, nombre);
+    }
+
+    async function subirLogoArea(areaId, inputEl) {
+      if (!inputEl.files || !inputEl.files[0]) return;
+      const formData = new FormData();
+      formData.append('logo', inputEl.files[0]);
+      try {
+        const res = await fetch('/api/areas/' + areaId + '/logo', { method: 'PUT', body: formData });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al subir logo.', 'error'); return; }
+        mostrarAlerta('Logo del área actualizado.', 'success');
+        cargarAreas();
+      } catch (e) { mostrarAlerta('Error al subir logo del área.', 'error'); }
+    }
+
+    async function eliminarArea(id, nombre) {
+      if (!confirm('¿Está seguro de eliminar el área "' + nombre + '"?\nEsta acción no se puede deshacer.')) return;
+      try {
+        const res = await fetch('/api/areas/' + id, { method: 'DELETE' });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al eliminar.', 'error'); return; }
+        mostrarAlerta('Área "' + nombre + '" eliminada.', 'success');
+        cargarAreas();
+      } catch (e) { mostrarAlerta('Error al eliminar área.', 'error'); }
+    }
+
     document.getElementById('form-area').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const datos = {
-        nombre: document.getElementById('area-nombre').value,
-        prefijo: document.getElementById('area-prefijo').value.toUpperCase(),
-        color: document.getElementById('area-color').value
-      };
+      const nombre = document.getElementById('area-nombre').value.trim();
+      const prefijo = document.getElementById('area-prefijo').value.trim().toUpperCase();
+      const color = document.getElementById('area-color').value;
+      const logoFile = document.getElementById('area-logo-file').files[0];
+      if (!nombre || !prefijo) { mostrarAlerta('Nombre y prefijo son obligatorios.', 'error'); return; }
       try {
         const res = await fetch('/api/areas', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(datos)
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, prefijo, color })
         });
         if (!res.ok) { const err = await res.json(); mostrarAlerta(err.error, 'error'); return; }
+        const area = await res.json();
+        if (logoFile) {
+          const fd = new FormData();
+          fd.append('logo', logoFile);
+          await fetch('/api/areas/' + area.id + '/logo', { method: 'PUT', body: fd });
+        }
         mostrarAlerta('Área agregada correctamente.', 'success');
         document.getElementById('form-area').reset();
         document.getElementById('area-color').value = '#0d6efd';
@@ -249,9 +483,133 @@
       } catch (e) { mostrarAlerta('Error al agregar área.', 'error'); }
     });
 
+    // ---- VENTANILLAS ----
+    async function cargarOperadores() {
+      try { const res = await fetch('/api/usuarios'); operadores = await res.json(); }
+      catch (e) { operadores = []; }
+    }
+
+    async function cargarVentanillas() {
+      try {
+        const res = await fetch('/api/ventanillas');
+        const ventanillas = await res.json();
+        const lista = document.getElementById('ventanillas-lista');
+        if (!ventanillas.length) { lista.innerHTML = '<p style="color:#888">No hay ventanillas registradas.</p>'; return; }
+        lista.innerHTML = ventanillas.map((v, i) => {
+          const usuarioInfo = v.usuario_nombre
+            ? 'Operador: <b>' + escHtml(v.usuario_nombre) + (v.username ? ' (' + escHtml(v.username) + ')' : '') + '</b>'
+            : '<span style="color:#aaa">Sin operador asignado</span>';
+          return `
+            <div class="ventanilla-item" id="vent-item-${v.id}" data-vent-id="${v.id}" data-vent-nombre="${escHtml(v.nombre)}">
+              <div class="ventanilla-num">${i + 1}</div>
+              <div class="ventanilla-info">
+                <strong>${escHtml(v.nombre)}</strong>
+                <small>${usuarioInfo}</small>
+              </div>
+              <div class="ventanilla-actions">
+                <button class="btn btn-secondary" onclick="abrirRenombrarBtn(this)">✏️ Renombrar</button>
+                <button class="btn btn-success" onclick="abrirAsignarBtn(this)">👤 Asignar</button>
+                <button class="btn btn-danger" onclick="eliminarVentanillaBtn(this)">🗑️</button>
+              </div>
+            </div>`;
+        }).join('');
+      } catch (e) { document.getElementById('ventanillas-lista').innerHTML = '<p style="color:red">Error al cargar ventanillas.</p>'; }
+    }
+
+    function abrirRenombrarBtn(btn) {
+      const item = btn.closest('.ventanilla-item');
+      abrirRenombrar(item.dataset.ventId, item.dataset.ventNombre);
+    }
+
+    function abrirAsignarBtn(btn) {
+      const item = btn.closest('.ventanilla-item');
+      abrirAsignar(item.dataset.ventId);
+    }
+
+    function eliminarVentanillaBtn(btn) {
+      const item = btn.closest('.ventanilla-item');
+      eliminarVentanilla(item.dataset.ventId, item.dataset.ventNombre);
+    }
+
+    document.getElementById('form-ventanilla').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('ventanilla-nombre').value.trim();
+      if (!nombre) return;
+      try {
+        const res = await fetch('/api/ventanillas', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre })
+        });
+        if (!res.ok) { const err = await res.json(); mostrarAlerta(err.error, 'error'); return; }
+        mostrarAlerta('Ventanilla agregada correctamente.', 'success');
+        document.getElementById('ventanilla-nombre').value = '';
+        cargarVentanillas();
+      } catch (e) { mostrarAlerta('Error al agregar ventanilla.', 'error'); }
+    });
+
+    function abrirRenombrar(id, nombreActual) {
+      ventanillaEditandoId = id;
+      document.getElementById('renombrar-input').value = nombreActual;
+      document.getElementById('modal-renombrar').classList.add('open');
+      setTimeout(() => document.getElementById('renombrar-input').focus(), 100);
+    }
+
+    async function confirmarRenombrar() {
+      const nombre = document.getElementById('renombrar-input').value.trim();
+      if (!nombre) { mostrarAlerta('El nombre no puede estar vacío.', 'error'); return; }
+      try {
+        const res = await fetch('/api/ventanillas/' + ventanillaEditandoId, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre })
+        });
+        if (!res.ok) { const err = await res.json(); mostrarAlerta(err.error, 'error'); return; }
+        mostrarAlerta('Ventanilla renombrada.', 'success');
+        cerrarModal('modal-renombrar');
+        cargarVentanillas();
+      } catch (e) { mostrarAlerta('Error al renombrar ventanilla.', 'error'); }
+    }
+
+    function abrirAsignar(id) {
+      ventanillaAsignandoId = id;
+      const sel = document.getElementById('asignar-usuario-sel');
+      sel.innerHTML = '<option value="">— Sin asignar —</option>' +
+        operadores.map(u => '<option value="' + u.id + '">' + (u.nombre || u.username) + ' (' + u.username + ')</option>').join('');
+      document.getElementById('modal-asignar').classList.add('open');
+    }
+
+    async function confirmarAsignar() {
+      const usuario_id = document.getElementById('asignar-usuario-sel').value || null;
+      try {
+        const res = await fetch('/api/ventanillas/' + ventanillaAsignandoId + '/usuario', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario_id })
+        });
+        if (!res.ok) { const err = await res.json(); mostrarAlerta(err.error, 'error'); return; }
+        mostrarAlerta('Operador asignado correctamente.', 'success');
+        cerrarModal('modal-asignar');
+        cargarVentanillas();
+      } catch (e) { mostrarAlerta('Error al asignar operador.', 'error'); }
+    }
+
+    async function eliminarVentanilla(id, nombre) {
+      if (!confirm('¿Eliminar la ventanilla "' + nombre + '"?')) return;
+      try {
+        const res = await fetch('/api/ventanillas/' + id, { method: 'DELETE' });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al eliminar.', 'error'); return; }
+        mostrarAlerta('Ventanilla "' + nombre + '" eliminada.', 'success');
+        cargarVentanillas();
+      } catch (e) { mostrarAlerta('Error al eliminar ventanilla.', 'error'); }
+    }
+
+    function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+    });
+
     // Inicializar
     cargarConfig();
     cargarAreas();
+    cargarVentanillas();
+    cargarOperadores();
   </script>
 </body>
 </html>

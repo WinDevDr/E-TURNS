@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inicio — E-TURNS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; min-height: 100vh; }
+    header {
+      background: linear-gradient(90deg, #0d6efd, #198754);
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .header-left { display: flex; align-items: center; gap: 1rem; }
+    .header-left img { height: 50px; width: auto; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.1); }
+    header h1 { font-size: 1.5rem; font-weight: 900; }
+    header p { opacity: 0.85; font-size: 0.85rem; }
+    .header-right { display: flex; align-items: center; gap: 1rem; }
+    .user-info { font-size: 0.9rem; opacity: 0.9; text-align: right; }
+    .btn-logout {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 8px;
+      padding: 0.45rem 1rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: background 0.15s;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,0.3); }
+    .container { max-width: 1000px; margin: 2.5rem auto; padding: 0 1.5rem; }
+    .bienvenida {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .bienvenida h2 { font-size: 1.8rem; color: #0d6efd; font-weight: 900; margin-bottom: 0.5rem; }
+    .bienvenida p { color: #666; font-size: 1rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+    .menu-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      text-decoration: none;
+      color: #333;
+      transition: transform 0.15s, box-shadow 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+    .menu-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.14);
+    }
+    .menu-card .icono {
+      font-size: 2.8rem;
+      display: block;
+    }
+    .menu-card h3 { font-size: 1.1rem; font-weight: 700; color: #222; }
+    .menu-card p { font-size: 0.82rem; color: #888; line-height: 1.4; }
+    .badge-admin {
+      background: #0d6efd;
+      color: #fff;
+      border-radius: 20px;
+      padding: 0.15rem 0.7rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <div id="logo-container"></div>
+      <div>
+        <h1>🏥 E-TURNS</h1>
+        <p id="nombre-hospital">Sistema Electrónico de Turnos</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="user-info">
+        <strong id="user-nombre">Administrador</strong><br>
+        <span class="badge-admin">ADMIN</span>
+      </div>
+      <form action="/auth/logout" method="POST" style="display:inline">
+        <button type="submit" class="btn-logout">🚪 Cerrar Sesión</button>
+      </form>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="bienvenida">
+      <h2>Panel de Administrador</h2>
+      <p>Seleccione una opción del sistema</p>
+    </div>
+
+    <div class="grid">
+      <a href="/kiosco" class="menu-card">
+        <span class="icono">📋</span>
+        <h3>Kiosco</h3>
+        <p>Terminal de solicitud de turnos para pacientes</p>
+      </a>
+
+      <a href="/panel" class="menu-card">
+        <span class="icono">🖥️</span>
+        <h3>Panel Operador</h3>
+        <p>Gestión y llamada de turnos en ventanilla</p>
+      </a>
+
+      <a href="/pantalla" class="menu-card">
+        <span class="icono">📺</span>
+        <h3>Pantalla Pública</h3>
+        <p>Visualización de turnos en sala de espera</p>
+      </a>
+
+      <a href="/admin" class="menu-card">
+        <span class="icono">⚙️</span>
+        <h3>Administración</h3>
+        <p>Configuración del sistema, áreas y ventanillas</p>
+      </a>
+
+      <a href="/stats" class="menu-card">
+        <span class="icono">📊</span>
+        <h3>Estadísticas</h3>
+        <p>Reportes y métricas de atención del día</p>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Cargar datos del usuario actual
+    fetch('/auth/me')
+      .then(r => r.json())
+      .then(user => {
+        if (user.nombre) document.getElementById('user-nombre').textContent = user.nombre;
+        else if (user.username) document.getElementById('user-nombre').textContent = user.username;
+      })
+      .catch(() => {});
+
+    // Cargar config del hospital
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(config => {
+        if (config.nombre) {
+          document.getElementById('nombre-hospital').textContent = config.nombre;
+          document.title = 'Inicio — ' + config.nombre;
+        }
+        if (config.logo) {
+          const container = document.getElementById('logo-container');
+          const img = document.createElement('img');
+          img.src = config.logo;
+          img.alt = 'Logo';
+          img.onerror = () => { container.innerHTML = ''; };
+          container.appendChild(img);
+        }
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>
