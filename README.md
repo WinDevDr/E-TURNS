@@ -43,10 +43,10 @@ Al iniciar, el sistema redirige automáticamente a la página de **login** en `/
 
 > Estos usuarios se crean automáticamente la primera vez que se inicia el servidor.
 
-| Usuario | Contraseña | Rol | Acceso |
-|---------|------------|-----|--------|
-| `admin` | `admin123` | Administrador | Todas las páginas |
-| `operador` | `op123` | Operador | Solo Panel de Operador |
+| Usuario | Contraseña | Rol | Nombre completo |
+|---------|------------|-----|-----------------|
+| `adiaz` | `admin123` | Administrador | Ana Diaz |
+| `jperez` | `op123` | Operador | Juan Perez |
 
 > ⚠️ **Recomendación de seguridad:** Cambie las contraseñas por defecto antes de poner el sistema en producción.
 

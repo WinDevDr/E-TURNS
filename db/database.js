@@ -96,12 +96,12 @@ function initDatabase() {
             if (err) return;
             db.run(
               'INSERT INTO usuarios (username, password, rol, nombre) VALUES (?, ?, ?, ?)',
-              ['admin', hashAdmin, 'admin', 'Administrador'],
+              ['adiaz', hashAdmin, 'admin', 'Ana Diaz'],
               () => {}
             );
             db.run(
               'INSERT INTO usuarios (username, password, rol, nombre) VALUES (?, ?, ?, ?)',
-              ['operador', hashOp, 'operador', 'Operador'],
+              ['jperez', hashOp, 'operador', 'Juan Perez'],
               () => {}
             );
           });

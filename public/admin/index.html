@@ -147,6 +147,7 @@
     <button class="tab-btn active" id="tbtn-config" onclick="mostrarTab('config', this)">🏥 Configuración General</button>
     <button class="tab-btn" id="tbtn-areas" onclick="mostrarTab('areas', this)">🏷️ Gestión de Áreas</button>
     <button class="tab-btn" id="tbtn-ventanillas" onclick="mostrarTab('ventanillas', this)">🪟 Gestión de Ventanillas</button>
+    <button class="tab-btn" id="tbtn-usuarios" onclick="mostrarTab('usuarios', this)">👥 Gestión de Usuarios</button>
   </div>
 
   <div class="container">
@@ -260,6 +261,44 @@
         <div id="ventanillas-lista"><p style="color:#888">Cargando ventanillas...</p></div>
       </div>
     </div>
+
+    <!-- TAB: Gestión de Usuarios -->
+    <div class="tab-panel" id="tab-usuarios">
+      <div class="card">
+        <h2>➕ Agregar Nuevo Usuario</h2>
+        <form id="form-usuario">
+          <div class="row">
+            <div class="form-group">
+              <label>Nombre Completo</label>
+              <input type="text" id="usuario-nombre" placeholder="Ej: Ana Diaz" required>
+            </div>
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="usuario-username" placeholder="Ej: adiaz" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="form-group">
+              <label>Contraseña</label>
+              <input type="password" id="usuario-password" placeholder="Contraseña" required>
+            </div>
+            <div class="form-group">
+              <label>Rol</label>
+              <select id="usuario-rol">
+                <option value="operador">Operador</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">➕ Agregar Usuario</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>👥 Usuarios Registrados</h2>
+        <div id="usuarios-lista"><p style="color:#888">Cargando usuarios...</p></div>
+      </div>
+    </div>
   </div>
 
   <!-- Modal: Renombrar ventanilla -->
@@ -290,6 +329,47 @@
       <div class="modal-actions">
         <button class="btn-outline" onclick="cerrarModal('modal-asignar')">Cancelar</button>
         <button class="btn btn-primary" onclick="confirmarAsignar()">✅ Asignar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Editar Usuario -->
+  <div class="modal-overlay" id="modal-editar-usuario">
+    <div class="modal">
+      <h3>✏️ Editar Usuario</h3>
+      <div class="form-group">
+        <label>Nombre Completo</label>
+        <input type="text" id="editar-usuario-nombre" placeholder="Ej: Ana Diaz">
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="editar-usuario-username" placeholder="Ej: adiaz">
+      </div>
+      <div class="form-group">
+        <label>Rol</label>
+        <select id="editar-usuario-rol">
+          <option value="operador">Operador</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="cerrarModal('modal-editar-usuario')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarEditarUsuario()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cambiar Contraseña de Usuario -->
+  <div class="modal-overlay" id="modal-password-usuario">
+    <div class="modal">
+      <h3>🔑 Cambiar Contraseña</h3>
+      <div class="form-group">
+        <label>Nueva Contraseña</label>
+        <input type="password" id="nueva-password-input" placeholder="Nueva contraseña">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="cerrarModal('modal-password-usuario')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarCambiarPassword()">💾 Guardar</button>
       </div>
     </div>
   </div>
@@ -485,7 +565,7 @@
 
     // ---- VENTANILLAS ----
     async function cargarOperadores() {
-      try { const res = await fetch('/api/usuarios'); operadores = await res.json(); }
+      try { const res = await fetch('/api/operadores'); operadores = await res.json(); }
       catch (e) { operadores = []; }
     }
 
@@ -605,11 +685,158 @@
       overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
     });
 
+    // ---- USUARIOS ----
+    let usuarioEditandoId = null;
+    let usuarioPasswordId = null;
+    let usuarioActualId = null;
+
+    async function obtenerUsuarioActual() {
+      try {
+        const res = await fetch('/auth/me');
+        if (res.ok) { const data = await res.json(); usuarioActualId = data.userId; }
+      } catch (e) {}
+    }
+
+    function generarUsername(nombre) {
+      const partes = nombre.trim().split(/\s+/).filter(p => p.length > 0);
+      if (partes.length < 2) return nombre.trim().toLowerCase().replace(/\s+/g, '');
+      const inicial = partes[0][0];
+      const apellido = partes[partes.length - 1];
+      return (inicial + apellido).toLowerCase();
+    }
+
+    document.getElementById('usuario-nombre').addEventListener('input', function () {
+      const usernameField = document.getElementById('usuario-username');
+      usernameField.value = generarUsername(this.value);
+    });
+
+    async function cargarUsuarios() {
+      try {
+        const res = await fetch('/api/usuarios');
+        const usuarios = await res.json();
+        const lista = document.getElementById('usuarios-lista');
+        if (!usuarios.length) { lista.innerHTML = '<p style="color:#888">No hay usuarios registrados.</p>'; return; }
+        lista.innerHTML = usuarios.map(u => {
+          const esPropioUsuario = String(u.id) === String(usuarioActualId);
+          const rolBadge = u.rol === 'admin'
+            ? '<span style="background:#0d6efd;color:#fff;border-radius:6px;padding:0.15rem 0.5rem;font-size:0.8rem;font-weight:700">Admin</span>'
+            : '<span style="background:#198754;color:#fff;border-radius:6px;padding:0.15rem 0.5rem;font-size:0.8rem;font-weight:700">Operador</span>';
+          const btnEliminar = esPropioUsuario
+            ? ''
+            : `<button class="btn btn-danger" data-uid="${u.id}" data-unombre="${escHtml(u.nombre || u.username)}" onclick="eliminarUsuarioBtn(this)">🗑️ Eliminar</button>`;
+          return `
+            <div class="ventanilla-item" id="usuario-item-${u.id}" data-uid="${u.id}" data-unombre="${escHtml(u.nombre || '')}" data-uusername="${escHtml(u.username)}" data-urol="${escHtml(u.rol)}">
+              <div class="ventanilla-info">
+                <strong>${escHtml(u.nombre || u.username)}</strong>
+                <small>(${escHtml(u.username)}) &nbsp; ${rolBadge}</small>
+              </div>
+              <div class="ventanilla-actions">
+                <button class="btn btn-secondary" onclick="abrirEditarUsuarioBtn(this)">✏️ Editar</button>
+                <button class="btn btn-warning" data-uid="${u.id}" onclick="abrirPasswordUsuarioBtn(this)">🔑 Contraseña</button>
+                ${btnEliminar}
+              </div>
+            </div>`;
+        }).join('');
+      } catch (e) { document.getElementById('usuarios-lista').innerHTML = '<p style="color:red">Error al cargar usuarios.</p>'; }
+    }
+
+    document.getElementById('form-usuario').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('usuario-nombre').value.trim();
+      const username = document.getElementById('usuario-username').value.trim();
+      const password = document.getElementById('usuario-password').value;
+      const rol = document.getElementById('usuario-rol').value;
+      if (!username) { mostrarAlerta('El username es obligatorio.', 'error'); return; }
+      if (!password) { mostrarAlerta('La contraseña es obligatoria.', 'error'); return; }
+      try {
+        const res = await fetch('/api/usuarios', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, username, password, rol })
+        });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al agregar usuario.', 'error'); return; }
+        mostrarAlerta('Usuario agregado correctamente.', 'success');
+        document.getElementById('form-usuario').reset();
+        cargarUsuarios();
+        cargarOperadores();
+      } catch (e) { mostrarAlerta('Error al agregar usuario.', 'error'); }
+    });
+
+    function abrirEditarUsuarioBtn(btn) {
+      const item = btn.closest('.ventanilla-item');
+      usuarioEditandoId = item.dataset.uid;
+      document.getElementById('editar-usuario-nombre').value = item.dataset.unombre;
+      document.getElementById('editar-usuario-username').value = item.dataset.uusername;
+      document.getElementById('editar-usuario-rol').value = item.dataset.urol;
+      document.getElementById('modal-editar-usuario').classList.add('open');
+      setTimeout(() => document.getElementById('editar-usuario-nombre').focus(), 100);
+    }
+
+    async function confirmarEditarUsuario() {
+      const nombre = document.getElementById('editar-usuario-nombre').value.trim();
+      const username = document.getElementById('editar-usuario-username').value.trim();
+      const rol = document.getElementById('editar-usuario-rol').value;
+      if (!username) { mostrarAlerta('El username no puede estar vacío.', 'error'); return; }
+      try {
+        const res = await fetch('/api/usuarios/' + usuarioEditandoId, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, username, rol })
+        });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al editar usuario.', 'error'); return; }
+        mostrarAlerta('Usuario actualizado correctamente.', 'success');
+        cerrarModal('modal-editar-usuario');
+        cargarUsuarios();
+        cargarOperadores();
+      } catch (e) { mostrarAlerta('Error al editar usuario.', 'error'); }
+    }
+
+    function abrirPasswordUsuarioBtn(btn) {
+      usuarioPasswordId = btn.dataset.uid;
+      document.getElementById('nueva-password-input').value = '';
+      document.getElementById('modal-password-usuario').classList.add('open');
+      setTimeout(() => document.getElementById('nueva-password-input').focus(), 100);
+    }
+
+    async function confirmarCambiarPassword() {
+      const password = document.getElementById('nueva-password-input').value;
+      if (!password) { mostrarAlerta('La contraseña no puede estar vacía.', 'error'); return; }
+      try {
+        const res = await fetch('/api/usuarios/' + usuarioPasswordId + '/password', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al cambiar contraseña.', 'error'); return; }
+        mostrarAlerta('Contraseña actualizada correctamente.', 'success');
+        cerrarModal('modal-password-usuario');
+      } catch (e) { mostrarAlerta('Error al cambiar contraseña.', 'error'); }
+    }
+
+    function eliminarUsuarioBtn(btn) {
+      const id = btn.dataset.uid;
+      const nombre = btn.dataset.unombre;
+      eliminarUsuario(id, nombre);
+    }
+
+    async function eliminarUsuario(id, nombre) {
+      if (!confirm('¿Está seguro de eliminar al usuario "' + nombre + '"?\nEsta acción no se puede deshacer.')) return;
+      try {
+        const res = await fetch('/api/usuarios/' + id, { method: 'DELETE' });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al eliminar usuario.', 'error'); return; }
+        mostrarAlerta('Usuario "' + nombre + '" eliminado.', 'success');
+        cargarUsuarios();
+        cargarOperadores();
+      } catch (e) { mostrarAlerta('Error al eliminar usuario.', 'error'); }
+    }
+
     // Inicializar
     cargarConfig();
     cargarAreas();
     cargarVentanillas();
     cargarOperadores();
+    obtenerUsuarioActual().then(() => cargarUsuarios());
   </script>
 </body>
 </html>

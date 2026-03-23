@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -258,11 +259,96 @@ router.delete('/ventanillas/:id', requireAuth, requireAdmin, (req, res) => {
   });
 });
 
-// GET /api/usuarios — listar operadores (para asignación de ventanillas)
+// GET /api/usuarios — listar todos los usuarios (admin y operador)
 router.get('/usuarios', requireAuth, requireAdmin, (req, res) => {
+  db.all('SELECT id, username, nombre, rol FROM usuarios ORDER BY nombre ASC', (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// GET /api/operadores — listar operadores (para asignación de ventanillas)
+router.get('/operadores', requireAuth, requireAdmin, (req, res) => {
   db.all("SELECT id, username, nombre, rol FROM usuarios WHERE rol = 'operador' ORDER BY nombre ASC", (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
+  });
+});
+
+// POST /api/usuarios — crear usuario
+router.post('/usuarios', requireAuth, requireAdmin, (req, res) => {
+  const { nombre, username, password, rol } = req.body;
+  if (!username || !username.trim()) return res.status(400).json({ error: 'El username es requerido.' });
+  if (!password) return res.status(400).json({ error: 'La contraseña es requerida.' });
+  if (!rol || !['admin', 'operador'].includes(rol)) return res.status(400).json({ error: 'El rol debe ser admin u operador.' });
+
+  db.get('SELECT id FROM usuarios WHERE username = ?', [username.trim()], (err, existing) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (existing) return res.status(409).json({ error: 'El username ya está en uso.' });
+
+    bcrypt.hash(password, 10, (err, hash) => {
+      if (err) return res.status(500).json({ error: 'Error al procesar la contraseña.' });
+      db.run(
+        'INSERT INTO usuarios (username, password, rol, nombre) VALUES (?, ?, ?, ?)',
+        [username.trim(), hash, rol, nombre ? nombre.trim() : ''],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.status(201).json({ id: this.lastID, username: username.trim(), nombre: nombre ? nombre.trim() : '', rol });
+        }
+      );
+    });
+  });
+});
+
+// PUT /api/usuarios/:id — editar nombre, username y rol
+router.put('/usuarios/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { nombre, username, rol } = req.body;
+  if (!username || !username.trim()) return res.status(400).json({ error: 'El username es requerido.' });
+  if (!rol || !['admin', 'operador'].includes(rol)) return res.status(400).json({ error: 'El rol debe ser admin u operador.' });
+
+  db.get('SELECT id FROM usuarios WHERE username = ? AND id != ?', [username.trim(), id], (err, existing) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (existing) return res.status(409).json({ error: 'El username ya está en uso por otro usuario.' });
+
+    db.run(
+      'UPDATE usuarios SET nombre = ?, username = ?, rol = ? WHERE id = ?',
+      [nombre ? nombre.trim() : '', username.trim(), rol, id],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'Usuario no encontrado.' });
+        res.json({ mensaje: 'Usuario actualizado correctamente.' });
+      }
+    );
+  });
+});
+
+// PUT /api/usuarios/:id/password — cambiar contraseña
+router.put('/usuarios/:id/password', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { password } = req.body;
+  if (!password) return res.status(400).json({ error: 'La contraseña es requerida.' });
+
+  bcrypt.hash(password, 10, (err, hash) => {
+    if (err) return res.status(500).json({ error: 'Error al procesar la contraseña.' });
+    db.run('UPDATE usuarios SET password = ? WHERE id = ?', [hash, id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Usuario no encontrado.' });
+      res.json({ mensaje: 'Contraseña actualizada correctamente.' });
+    });
+  });
+});
+
+// DELETE /api/usuarios/:id — eliminar usuario (no puede eliminarse a sí mismo)
+router.delete('/usuarios/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  if (String(req.session.userId) === String(id)) {
+    return res.status(403).json({ error: 'No puedes eliminar tu propio usuario.' });
+  }
+  db.run('DELETE FROM usuarios WHERE id = ?', [id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Usuario no encontrado.' });
+    res.json({ mensaje: 'Usuario eliminado correctamente.' });
   });
 });
 
