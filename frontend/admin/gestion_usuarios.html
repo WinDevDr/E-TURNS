@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios — E-TURNS Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<div class="admin-layout">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-icon">🎫</span>
+            <div>
+                <h2>E-TURNS</h2>
+                <p>Panel de Administración</p>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">Principal</div>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">🎫</span> Turnos
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">🏪</span> Ventanillas
+            </a>
+
+            <div class="nav-section-title">Administración</div>
+            <a href="gestion_usuarios.html" class="nav-item active">
+                <span class="nav-icon">👥</span> Gestión de Usuarios
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">⚙️</span> Configuración
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">📈</span> Reportes
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-avatar">A</div>
+            <div class="user-info">
+                <p>Administrador</p>
+                <span>admin@eturns.com</span>
+            </div>
+            <button class="logout-btn" title="Cerrar sesión" onclick="window.location.href='../index.html'">🚪</button>
+        </div>
+    </aside>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <main class="main-content">
+
+        <!-- Top Bar -->
+        <header class="topbar">
+            <button class="btn-action" id="sidebarToggle" title="Menú" style="display:none">☰</button>
+            <h1>👥 Gestión de Usuarios</h1>
+            <div class="topbar-actions">
+                <button class="btn btn-primary" id="btnNuevoUsuario">
+                    ➕ Nuevo Usuario
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row" id="statsRow">
+                <div class="stat-card">
+                    <span class="stat-icon">👥</span>
+                    <div class="stat-info">
+                        <p>Total Usuarios</p>
+                        <strong id="statTotal">—</strong>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">✅</span>
+                    <div class="stat-info">
+                        <p>Activos</p>
+                        <strong id="statActivos">—</strong>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">❌</span>
+                    <div class="stat-info">
+                        <p>Inactivos</p>
+                        <strong id="statInactivos">—</strong>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">🛡️</span>
+                    <div class="stat-info">
+                        <p>Administradores</p>
+                        <strong id="statAdmins">—</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Usuarios del sistema</h2>
+                    <div class="filters-row">
+                        <div class="search-input">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="searchInput" placeholder="Buscar por nombre o email…">
+                        </div>
+                        <select class="filter-select" id="filterRol">
+                            <option value="">Todos los roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="operador">Operador</option>
+                        </select>
+                        <select class="filter-select" id="filterEstado">
+                            <option value="">Todos los estados</option>
+                            <option value="1">Activos</option>
+                            <option value="0">Inactivos</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-wrapper">
+                        <table id="usuariosTable">
+                            <thead>
+                                <tr>
+                                    <th data-col="nombre">Usuario <span class="sort-icon">↕</span></th>
+                                    <th data-col="rol">Rol <span class="sort-icon">↕</span></th>
+                                    <th data-col="ventanilla_nombre">Ventanilla <span class="sort-icon">↕</span></th>
+                                    <th data-col="activo">Estado <span class="sort-icon">↕</span></th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usuariosBody">
+                                <tr>
+                                    <td colspan="5" class="empty-state">
+                                        <div class="spinner"></div>
+                                        <p style="margin-top:8px">Cargando usuarios…</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /page-content -->
+    </main>
+</div><!-- /admin-layout -->
+
+<!-- ============================================================
+     MODALES
+     ============================================================ -->
+
+<!-- Modal: Nuevo Usuario -->
+<div class="modal-overlay" id="modalNuevoUsuario">
+    <div class="modal">
+        <div class="modal-header">
+            <span>➕</span>
+            <h3>Nuevo Usuario</h3>
+            <button class="modal-close" data-close="modalNuevoUsuario">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Nombre completo</label>
+                <input type="text" id="nuevoNombre" placeholder="Ej: Juan Pérez">
+                <div class="form-error" id="errNuevoNombre"></div>
+            </div>
+            <div class="form-group">
+                <label>Correo electrónico</label>
+                <input type="email" id="nuevoEmail" placeholder="correo@eturns.com">
+                <div class="form-error" id="errNuevoEmail"></div>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="nuevoPassword" placeholder="Mínimo 6 caracteres">
+                <div class="form-error" id="errNuevoPassword"></div>
+            </div>
+            <div class="form-group">
+                <label>Confirmar contraseña</label>
+                <input type="password" id="nuevoPasswordConfirm" placeholder="Repite la contraseña">
+                <div class="form-error" id="errNuevoPasswordConfirm"></div>
+            </div>
+            <div class="form-group">
+                <label>Rol</label>
+                <select id="nuevoRol">
+                    <option value="operador">Operador</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="admin">Administrador</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Ventanilla</label>
+                <select id="nuevoVentanilla">
+                    <option value="">— Sin asignar —</option>
+                </select>
+            </div>
+            <div id="alertNuevoUsuario"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="modalNuevoUsuario">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarNuevo">Crear usuario</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Nombre -->
+<div class="modal-overlay" id="modalNombre">
+    <div class="modal">
+        <div class="modal-header">
+            <span>✏️</span>
+            <h3>Editar nombre</h3>
+            <button class="modal-close" data-close="modalNombre">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Nombre completo</label>
+                <input type="text" id="editNombre" placeholder="Nombre completo">
+                <div class="form-error" id="errEditNombre"></div>
+            </div>
+            <div id="alertNombre"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="modalNombre">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarNombre">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Cambiar Contraseña -->
+<div class="modal-overlay" id="modalPassword">
+    <div class="modal">
+        <div class="modal-header">
+            <span>🔑</span>
+            <h3>Cambiar contraseña</h3>
+            <button class="modal-close" data-close="modalPassword">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Nueva contraseña</label>
+                <input type="password" id="newPassword" placeholder="Mínimo 6 caracteres">
+                <div class="form-error" id="errNewPassword"></div>
+            </div>
+            <div class="form-group">
+                <label>Confirmar contraseña</label>
+                <input type="password" id="confirmPassword" placeholder="Repite la contraseña">
+                <div class="form-error" id="errConfirmPassword"></div>
+            </div>
+            <div id="alertPassword"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="modalPassword">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarPassword">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Asignar Ventanilla -->
+<div class="modal-overlay" id="modalVentanilla">
+    <div class="modal">
+        <div class="modal-header">
+            <span>🏪</span>
+            <h3>Asignar ventanilla</h3>
+            <button class="modal-close" data-close="modalVentanilla">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Ventanilla</label>
+                <select id="selectVentanilla">
+                    <option value="">— Sin asignar —</option>
+                </select>
+            </div>
+            <div id="alertVentanilla"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="modalVentanilla">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarVentanilla">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Cambiar Rol -->
+<div class="modal-overlay" id="modalRol">
+    <div class="modal">
+        <div class="modal-header">
+            <span>👤</span>
+            <h3>Cambiar rol</h3>
+            <button class="modal-close" data-close="modalRol">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Rol del usuario</label>
+                <select id="selectRol">
+                    <option value="operador">Operador</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="admin">Administrador</option>
+                </select>
+            </div>
+            <div id="alertRol"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="modalRol">Cancelar</button>
+            <button class="btn btn-primary" id="btnGuardarRol">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmar Desactivar/Activar -->
+<div class="modal-overlay" id="modalConfirmEstado">
+    <div class="modal">
+        <div class="modal-header">
+            <span id="confirmEstadoIcon">⚠️</span>
+            <h3 id="confirmEstadoTitle">Confirmar acción</h3>
+            <button class="modal-close" data-close="modalConfirmEstado">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmEstadoMsg" style="color:var(--gray-600); line-height:1.6;"></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="modalConfirmEstado">Cancelar</button>
+            <button class="btn" id="btnConfirmEstado">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script src="../js/gestion_usuarios.js"></script>
+</body>
+</html>
