@@ -283,6 +283,22 @@
         </div>
         <div class="row">
           <div class="form-group">
+            <label>Color Primario Pantalla (turno/reloj)</label>
+            <div class="color-row">
+              <input type="color" id="conf-color_pantalla_primario-picker" value="#0dcaf0">
+              <input type="text" id="conf-color_pantalla_primario" value="#0dcaf0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Color Secundario Pantalla (ventanilla/separador)</label>
+            <div class="color-row">
+              <input type="color" id="conf-color_pantalla_secundario-picker" value="#0d6efd">
+              <input type="text" id="conf-color_pantalla_secundario" value="#0d6efd">
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
             <label>Horario de Apertura</label>
             <input type="time" id="conf-horario_apertura" value="07:00">
           </div>
@@ -292,6 +308,28 @@
           </div>
         </div>
         <button class="btn btn-primary" onclick="guardarConfigPantalla()">💾 Guardar Config Pantalla</button>
+      </div>
+
+      <div class="card">
+        <h2>📋 Colores del Panel Operador</h2>
+        <small style="color:#888;display:block;margin-bottom:1rem">Estos colores afectan el encabezado del Panel de Operador.</small>
+        <div class="row">
+          <div class="form-group">
+            <label>Color Primario Panel</label>
+            <div class="color-row">
+              <input type="color" id="conf-color_panel_primario-picker" value="#0d6efd">
+              <input type="text" id="conf-color_panel_primario" value="#0d6efd">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Color Secundario Panel</label>
+            <div class="color-row">
+              <input type="color" id="conf-color_panel_secundario-picker" value="#198754">
+              <input type="text" id="conf-color_panel_secundario" value="#198754">
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="guardarColoresPanel()">💾 Guardar Colores Panel</button>
       </div>
     </div>
 
@@ -553,6 +591,10 @@
     syncColors('conf-color_kiosco_primario-picker', 'conf-color_kiosco_primario');
     syncColors('conf-color_kiosco_secundario-picker', 'conf-color_kiosco_secundario');
     syncColors('conf-color_fondo_pantalla-picker', 'conf-color_fondo_pantalla');
+    syncColors('conf-color_pantalla_primario-picker', 'conf-color_pantalla_primario');
+    syncColors('conf-color_pantalla_secundario-picker', 'conf-color_pantalla_secundario');
+    syncColors('conf-color_panel_primario-picker', 'conf-color_panel_primario');
+    syncColors('conf-color_panel_secundario-picker', 'conf-color_panel_secundario');
 
     async function cargarConfig() {
       try {
@@ -591,6 +633,22 @@
         if (config.color_fondo_pantalla) {
           document.getElementById('conf-color_fondo_pantalla').value = config.color_fondo_pantalla;
           document.getElementById('conf-color_fondo_pantalla-picker').value = config.color_fondo_pantalla;
+        }
+        if (config.color_pantalla_primario) {
+          document.getElementById('conf-color_pantalla_primario').value = config.color_pantalla_primario;
+          document.getElementById('conf-color_pantalla_primario-picker').value = config.color_pantalla_primario;
+        }
+        if (config.color_pantalla_secundario) {
+          document.getElementById('conf-color_pantalla_secundario').value = config.color_pantalla_secundario;
+          document.getElementById('conf-color_pantalla_secundario-picker').value = config.color_pantalla_secundario;
+        }
+        if (config.color_panel_primario) {
+          document.getElementById('conf-color_panel_primario').value = config.color_panel_primario;
+          document.getElementById('conf-color_panel_primario-picker').value = config.color_panel_primario;
+        }
+        if (config.color_panel_secundario) {
+          document.getElementById('conf-color_panel_secundario').value = config.color_panel_secundario;
+          document.getElementById('conf-color_panel_secundario-picker').value = config.color_panel_secundario;
         }
         if (config.horario_apertura) document.getElementById('conf-horario_apertura').value = config.horario_apertura;
         if (config.horario_cierre) document.getElementById('conf-horario_cierre').value = config.horario_cierre;
@@ -682,6 +740,8 @@
     async function guardarConfigPantalla() {
       const datos = {
         color_fondo_pantalla: document.getElementById('conf-color_fondo_pantalla').value,
+        color_pantalla_primario: document.getElementById('conf-color_pantalla_primario').value,
+        color_pantalla_secundario: document.getElementById('conf-color_pantalla_secundario').value,
         horario_apertura: document.getElementById('conf-horario_apertura').value,
         horario_cierre: document.getElementById('conf-horario_cierre').value
       };
@@ -690,6 +750,18 @@
         const result = await res.json();
         mostrarAlerta(result.mensaje || 'Configuración de pantalla guardada.', 'success');
       } catch (e) { mostrarAlerta('Error al guardar.', 'error'); }
+    }
+
+    async function guardarColoresPanel() {
+      const datos = {
+        color_panel_primario: document.getElementById('conf-color_panel_primario').value,
+        color_panel_secundario: document.getElementById('conf-color_panel_secundario').value
+      };
+      try {
+        const res = await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+        const result = await res.json();
+        mostrarAlerta(result.mensaje || 'Colores del panel guardados.', 'success');
+      } catch (e) { mostrarAlerta('Error al guardar colores del panel.', 'error'); }
     }
 
     async function subirLogoSistema() {

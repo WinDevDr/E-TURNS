@@ -25,17 +25,15 @@ async function cargarConfig() {
   }
 }
 
-// Solicitar turno normal
+// Solicitar turno normal — todos los tipos inician en Facturación
 async function solicitarTurno(tipo) {
-  const area = tipo === 'Entrega de Resultados' ? 'Toma de Muestra' : 'Facturación';
-  await _crearTurno(tipo, area, 0);
+  await _crearTurno(tipo, 'Facturación', 0);
 }
 
-// Solicitar turno preferencial
+// Solicitar turno preferencial — todos los tipos inician en Facturación
 async function solicitarTurnoPref(tipo) {
   cerrarModalPreferencial();
-  const area = tipo === 'Entrega de Resultados' ? 'Toma de Muestra' : 'Facturación';
-  await _crearTurno(tipo, area, 1);
+  await _crearTurno(tipo, 'Facturación', 1);
 }
 
 async function _crearTurno(tipo_paciente, area, preferencial) {

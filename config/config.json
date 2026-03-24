@@ -10,6 +10,10 @@
     "color_kiosco_primario": "#0d6efd",
     "color_kiosco_secundario": "#198754",
     "color_fondo_pantalla": "#0a0a1a",
+    "color_pantalla_primario": "#0dcaf0",
+    "color_pantalla_secundario": "#0d6efd",
+    "color_panel_primario": "#0d6efd",
+    "color_panel_secundario": "#198754",
     "horario_apertura": "07:00",
     "horario_cierre": "17:00"
   },

@@ -108,6 +108,7 @@
     .btn-atender { background: #198754; color: #fff; }
     .btn-cancelar { background: #dc3545; color: #fff; }
     .empty-col { text-align: center; color: #bbb; padding: 2rem 1rem; font-style: italic; font-size: 0.9rem; }
+    .turn-card.finalizado { opacity: 0.7; border-left-color: #6c757d; background: #f0f0f0; }
     .btn-logout { background: rgba(220,53,69,0.85); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 0.9rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
   </style>
 </head>
@@ -116,6 +117,7 @@
     <div class="header-left">
       <h1>🖥️ Panel Operador — E-TURNS</h1>
       <span id="operador-nombre"></span>
+      <span id="sucursal-nombre" style="font-size:0.8rem;opacity:0.7;margin-top:0.1rem"></span>
     </div>
     <div class="header-right">
       <div class="ventanilla-select">
@@ -167,6 +169,10 @@
         <div class="col-header" style="background:#198754">🧪 Toma de Muestra</div>
         <div class="col-body" id="cards-toma-muestra"></div>
       </div>
+      <div class="kanban-col" id="col-finalizados">
+        <div class="col-header" style="background:#495057">✅ Finalizados Hoy</div>
+        <div class="col-body" id="cards-finalizados"></div>
+      </div>
     </div>
   </div>
 
@@ -193,39 +199,50 @@
 
     function crearCard(t) {
       const etapa = t.etapa || 'espera_sala';
+      const finalizado = t.estado === 'atendido' || t.estado === 'cancelado';
       let acciones = '';
 
-      if (etapa === 'espera_sala') {
-        acciones = `
-          <button class="btn btn-llamar" onclick="llamarFact(${t.id})">📣 Llamar a Facturación</button>
-          <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
-        `;
-      } else if (etapa === 'facturacion') {
-        acciones = `
-          <button class="btn btn-pasar" onclick="pasarMuestra(${t.id})">🔬 Pasar a Toma de Muestra</button>
-          <button class="btn btn-solo-fact" onclick="atenderFact(${t.id})">✅ Solo Facturación</button>
-          <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
-        `;
-      } else if (etapa === 'espera_muestra') {
-        acciones = `
-          <button class="btn btn-llamar" onclick="llamarMuestra(${t.id})">📣 Llamar a Toma de Muestra</button>
-          <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
-        `;
-      } else if (etapa === 'toma_muestra') {
-        acciones = `
-          <button class="btn btn-atender" onclick="atenderMuestra(${t.id})">✅ Atendido</button>
-          <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
-        `;
+      if (!finalizado) {
+        if (etapa === 'espera_sala') {
+          acciones = `
+            <button class="btn btn-llamar" onclick="llamarFact(${t.id})">📣 Llamar a Facturación</button>
+            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+          `;
+        } else if (etapa === 'facturacion') {
+          acciones = `
+            <button class="btn btn-pasar" onclick="pasarMuestra(${t.id})">🔬 Pasar a Toma de Muestra</button>
+            <button class="btn btn-solo-fact" onclick="atenderFact(${t.id})">✅ Solo Facturación</button>
+            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+          `;
+        } else if (etapa === 'espera_muestra') {
+          acciones = `
+            <button class="btn btn-llamar" onclick="llamarMuestra(${t.id})">📣 Llamar a Toma de Muestra</button>
+            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+          `;
+        } else if (etapa === 'toma_muestra') {
+          acciones = `
+            <button class="btn btn-atender" onclick="atenderMuestra(${t.id})">✅ Atendido</button>
+            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+          `;
+        }
       }
 
       const prefBadge = t.preferencial ? '<span class="badge badge-pref">⭐ Preferencial</span>' : '';
       const tipoBadge = t.tipo_paciente ? `<span class="badge badge-tipo">${escHtml(t.tipo_paciente)}</span>` : '';
+      const estadoBadge = finalizado
+        ? `<span class="badge" style="background:${t.estado==='atendido'?'#d1e7dd;color:#0a3622':'#f8d7da;color:#842029'}">${t.estado === 'atendido' ? '✅ Atendido' : '❌ Cancelado'}</span>`
+        : '';
+      const atendidoPorHtml = t.atendido_por_facturacion
+        ? `<div class="turn-time">Fact: ${escHtml(t.atendido_por_facturacion)}</div>` : '';
+      const muestraHtml = t.atendido_por_muestra
+        ? `<div class="turn-time">Muestra: ${escHtml(t.atendido_por_muestra)}</div>` : '';
 
       return `
-        <div class="turn-card${t.preferencial ? ' preferencial' : ''}" id="card-${t.id}">
+        <div class="turn-card${t.preferencial ? ' preferencial' : ''}${finalizado ? ' finalizado' : ''}" id="card-${t.id}">
           <div class="turn-num">${escHtml(t.numero)}</div>
-          <div class="turn-badges">${prefBadge}${tipoBadge}</div>
-          <div class="turn-time">${tiempoEspera(t.fecha_hora)}</div>
+          <div class="turn-badges">${prefBadge}${tipoBadge}${estadoBadge}</div>
+          <div class="turn-time">${finalizado ? new Date(t.fecha_atendido || t.fecha_hora).toLocaleTimeString('es-ES') : tiempoEspera(t.fecha_hora)}</div>
+          ${atendidoPorHtml}${muestraHtml}
           <div class="turn-actions">${acciones}</div>
         </div>
       `;
@@ -238,10 +255,13 @@
         'espera_muestra': document.getElementById('cards-espera-muestra'),
         'toma_muestra': document.getElementById('cards-toma-muestra')
       };
+      const colFin = document.getElementById('cards-finalizados');
 
       Object.values(cols).forEach(c => { c.innerHTML = ''; });
+      colFin.innerHTML = '';
 
       const activos = turnos.filter(t => t.estado !== 'atendido' && t.estado !== 'cancelado');
+      const finalizados = turnos.filter(t => t.estado === 'atendido' || t.estado === 'cancelado');
 
       activos.forEach(t => {
         const etapa = t.etapa || 'espera_sala';
@@ -249,11 +269,21 @@
         if (col) col.innerHTML += crearCard(t);
       });
 
-      Object.entries(cols).forEach(([etapa, col]) => {
+      // Finalizados — últimos 20, más recientes primero
+      const MAX_FINALIZADOS = 20;
+      const finRecientes = finalizados.slice(-MAX_FINALIZADOS).reverse();
+      finRecientes.forEach(t => {
+        colFin.innerHTML += crearCard(t);
+      });
+
+      Object.entries(cols).forEach(([, col]) => {
         if (col.children.length === 0) {
           col.innerHTML = '<div class="empty-col">Sin turnos</div>';
         }
       });
+      if (colFin.children.length === 0) {
+        colFin.innerHTML = '<div class="empty-col">Sin turnos finalizados hoy</div>';
+      }
 
       actualizarStats(activos);
     }
@@ -268,8 +298,11 @@
 
     async function cargarTurnos() {
       try {
-        const res = await fetch('/api/turnos');
-        turnos = await res.json();
+        const res = await fetch('/api/turnos?incluir_cancelados=true');
+        const todos = await res.json();
+        // Solo del día de hoy
+        const hoy = new Date().toISOString().split('T')[0];
+        turnos = todos.filter(t => t.fecha_hora && t.fecha_hora.startsWith(hoy));
         renderKanban();
       } catch (e) { console.error('Error al cargar turnos:', e); }
     }
@@ -292,6 +325,22 @@
           const u = await res.json();
           const el = document.getElementById('operador-nombre');
           if (el) el.textContent = u.nombre || u.username || '';
+        }
+      } catch (e) {}
+    }
+
+    async function cargarSucursal() {
+      try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+          const cfg = await res.json();
+          const el = document.getElementById('sucursal-nombre');
+          if (el && cfg.nombre) el.textContent = '🏥 ' + cfg.nombre;
+          // Aplicar colores del panel al header
+          const primario = cfg.color_panel_primario || '#0d6efd';
+          const secundario = cfg.color_panel_secundario || '#198754';
+          const header = document.querySelector('header');
+          if (header) header.style.background = `linear-gradient(90deg, ${primario}, ${secundario})`;
         }
       } catch (e) {}
     }
@@ -344,8 +393,10 @@
 
     async function atenderFact(id) {
       try {
-        await fetch(`/api/turnos/${id}/atender`, { method: 'PUT' });
-        turnos = turnos.filter(t => t.id !== id);
+        const res = await fetch(`/api/turnos/${id}/atender`, { method: 'PUT' });
+        const turno = await res.json();
+        const idx = turnos.findIndex(t => t.id === id);
+        if (idx !== -1) turnos[idx] = turno;
         renderKanban();
         socket.emit('update_stats');
       } catch (e) { alert('Error al atender turno.'); }
@@ -353,8 +404,10 @@
 
     async function atenderMuestra(id) {
       try {
-        await fetch(`/api/turnos/${id}/atender`, { method: 'PUT' });
-        turnos = turnos.filter(t => t.id !== id);
+        const res = await fetch(`/api/turnos/${id}/atender`, { method: 'PUT' });
+        const turno = await res.json();
+        const idx = turnos.findIndex(t => t.id === id);
+        if (idx !== -1) turnos[idx] = turno;
         renderKanban();
         socket.emit('update_stats');
       } catch (e) { alert('Error al atender turno.'); }
@@ -365,7 +418,9 @@
       try {
         const res = await fetch(`/api/turnos/${id}/cancelar`, { method: 'PUT' });
         if (!res.ok) { const e = await res.json(); alert('Error: ' + e.error); return; }
-        turnos = turnos.filter(t => t.id !== id);
+        const turno = await res.json();
+        const idx = turnos.findIndex(t => t.id === id);
+        if (idx !== -1) turnos[idx] = turno;
         socket.emit('cancel_turn', { id });
         renderKanban();
       } catch (e) { alert('Error al cancelar turno.'); }
@@ -378,8 +433,11 @@
     });
 
     socket.on('turn_cancelled', (data) => {
-      turnos = turnos.filter(t => t.id !== data.id);
-      renderKanban();
+      const idx = turnos.findIndex(t => t.id === data.id);
+      if (idx !== -1) {
+        turnos[idx].estado = 'cancelado';
+        renderKanban();
+      }
     });
 
     socket.on('stats_updated', cargarTurnos);
@@ -390,6 +448,7 @@
     // Inicializar
     cargarVentanillas();
     cargarOperador();
+    cargarSucursal();
     cargarTurnos();
   </script>
 </body>

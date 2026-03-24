@@ -73,14 +73,12 @@ router.post('/turnos', (req, res) => {
   const { tipo_paciente, preferencial } = req.body;
   let { area } = req.body;
 
-  // Determinar área según tipo de paciente
-  if (tipo_paciente === 'Entrega de Resultados') {
-    area = 'Toma de Muestra';
-  } else if (!area) {
+  // Todos los tipos pasan por Facturación primero (incluyendo Entrega de Resultados)
+  if (!area) {
     area = 'Facturación';
   }
 
-  const etapa_inicial = tipo_paciente === 'Entrega de Resultados' ? 'espera_muestra' : 'espera_sala';
+  const etapa_inicial = 'espera_sala';
   const esPreferencial = preferencial ? 1 : 0;
 
   // Obtener prefijo del área

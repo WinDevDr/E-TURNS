@@ -6,144 +6,230 @@
   <title>Pantalla — E-TURNS</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
+    html, body {
+      height: 100%;
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #0a0a1a;
       color: #fff;
-      min-height: 100vh;
+      overflow: hidden;
+    }
+    .screen {
       display: grid;
-      grid-template-columns: 1fr 380px;
-      grid-template-rows: auto 1fr auto;
+      grid-template-columns: 60fr 40fr;
+      height: 100vh;
     }
-    header {
-      grid-column: 1 / -1;
-      background: linear-gradient(90deg, #0d6efd, #198754);
-      padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    header h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: 2px; }
-    #reloj { font-size: 1.4rem; font-weight: 700; font-family: monospace; }
-    .turno-panel {
+
+    /* ===== LEFT PANEL (60%) ===== */
+    .panel-turno {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 3rem;
+      padding: 2rem;
+      position: relative;
+      border-right: 2px solid rgba(255,255,255,0.08);
     }
-    .turno-etiqueta { font-size: 1.2rem; color: #adb5bd; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; }
-    .turno-numero {
-      font-size: 10rem;
-      font-weight: 900;
-      color: #0dcaf0;
-      text-shadow: 0 0 40px rgba(13,202,240,0.4);
-      line-height: 1;
+    .logo-wrap {
       margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #hospital-logo {
+      max-height: 140px;
+      max-width: 340px;
+      object-fit: contain;
+      display: none;
+    }
+    #hospital-nombre {
+      font-size: 2.8rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+    .turno-etiqueta {
+      font-size: 1rem;
+      color: #adb5bd;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      margin-bottom: 0.5rem;
+    }
+    .turno-numero {
+      font-size: 13rem;
+      font-weight: 900;
+      line-height: 1;
+      color: #0dcaf0;
+      text-shadow: 0 0 60px rgba(13,202,240,0.5);
       transition: all 0.3s;
     }
+    .turno-numero.sin-turno {
+      font-size: 5rem;
+      color: #333;
+      font-style: italic;
+      text-shadow: none;
+    }
     .turno-area {
-      font-size: 2rem;
+      font-size: 1.8rem;
       color: #adb5bd;
-      margin-bottom: 0.75rem;
+      margin-top: 0.5rem;
     }
     .turno-ventanilla {
-      font-size: 1.5rem;
-      background: #0d6efd;
-      color: #fff;
-      padding: 0.5rem 1.5rem;
-      border-radius: 30px;
+      margin-top: 0.75rem;
+      font-size: 1.3rem;
       font-weight: 700;
+      padding: 0.4rem 1.5rem;
+      border-radius: 30px;
+      background: #0d6efd;
     }
-    .sin-turno { color: #495057; font-style: italic; font-size: 2rem; }
-    .video-panel {
-      border-left: 2px solid #1e1e3a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #0d0d2b;
-      padding: 1rem;
-    }
-    .video-panel iframe {
-      width: 100%;
-      aspect-ratio: 16/9;
-      border: none;
-      border-radius: 10px;
-    }
-    .video-panel p { color: #6c757d; margin-top: 0.5rem; font-size: 0.8rem; text-align: center; }
-    footer {
-      grid-column: 1 / -1;
-      background: #050510;
-      padding: 0.75rem 2rem;
-      text-align: center;
-      color: #495057;
-      font-size: 0.85rem;
-    }
-    #mensaje-footer { font-style: italic; }
     .historial {
       margin-top: 2rem;
-      max-width: 400px;
       width: 100%;
+      max-width: 460px;
     }
-    .historial h4 { color: #6c757d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem; }
+    .historial h4 {
+      font-size: 0.75rem;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 0.5rem;
+    }
     .historial-item {
       display: flex;
       justify-content: space-between;
       padding: 0.4rem 0;
       border-bottom: 1px solid #1e1e3a;
-      color: #adb5bd;
-      font-size: 0.95rem;
+      color: #6c757d;
+      font-size: 0.9rem;
     }
     @keyframes parpadeo {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+      50% { opacity: 0.3; }
     }
-    .nuevo-turno { animation: parpadeo 0.8s ease 3; }
+    .nuevo-turno { animation: parpadeo 0.7s ease 4; }
+
+    /* ===== RIGHT PANEL (40%) ===== */
+    .panel-media {
+      display: flex;
+      flex-direction: column;
+      background: #050514;
+    }
+    .media-clock {
+      padding: 1.2rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    #reloj {
+      font-size: 2rem;
+      font-weight: 900;
+      font-family: monospace;
+      color: #0dcaf0;
+    }
+    #fecha-display {
+      font-size: 0.9rem;
+      color: #6c757d;
+      text-align: right;
+    }
+    .media-video {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      overflow: hidden;
+    }
+    .media-video iframe,
+    .media-video video {
+      width: 100%;
+      border-radius: 12px;
+      border: none;
+      max-height: 100%;
+    }
+    .media-video iframe { aspect-ratio: 16/9; }
+    .media-video video { height: 100%; object-fit: contain; }
+
+    /* ===== SCROLLING TICKER ===== */
+    .ticker-wrap {
+      background: rgba(0,0,0,0.5);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+      padding: 0.5rem 0;
+      white-space: nowrap;
+    }
+    .ticker-content {
+      display: inline-block;
+      animation: ticker-scroll 30s linear infinite;
+      font-size: 0.95rem;
+      color: #adb5bd;
+      padding-left: 100%;
+    }
+    .ticker-content .sep { margin: 0 2rem; color: #0d6efd; }
+    @keyframes ticker-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+    #turno-ventanilla-style {}
   </style>
 </head>
 <body>
-  <header id="header-bar">
-    <div style="display:flex;align-items:center;gap:1rem">
-      <img id="hospital-logo" src="" alt="Logo" style="display:none;max-height:50px;max-width:140px;object-fit:contain">
-      <h1 id="hospital-nombre">E-TURNS</h1>
+  <style id="dynamic-styles"></style>
+
+  <div class="screen">
+    <!-- LEFT: Turno en atención -->
+    <div class="panel-turno">
+      <div class="logo-wrap">
+        <img id="hospital-logo" src="" alt="Logo">
+        <span id="hospital-nombre">E-TURNS</span>
+      </div>
+      <div class="turno-etiqueta">Turno en atención</div>
+      <div class="turno-numero sin-turno" id="turno-numero">---</div>
+      <div class="turno-area" id="turno-area"></div>
+      <div class="turno-ventanilla" id="turno-ventanilla" style="display:none"></div>
+
+      <div class="historial">
+        <h4>Últimos turnos llamados</h4>
+        <div id="historial-list"></div>
+      </div>
     </div>
-    <div id="reloj">--:--:--</div>
-  </header>
-  <style id="turno-ventanilla-style"></style>
 
-  <div class="turno-panel">
-    <div class="turno-etiqueta">Turno en atención</div>
-    <div class="turno-numero sin-turno" id="turno-numero">---</div>
-    <div class="turno-area" id="turno-area"></div>
-    <div class="turno-ventanilla" id="turno-ventanilla" style="display:none"></div>
-
-    <div class="historial">
-      <h4>Últimos turnos llamados</h4>
-      <div id="historial-list"></div>
+    <!-- RIGHT: Media + info -->
+    <div class="panel-media">
+      <div class="media-clock">
+        <div id="reloj">--:--:--</div>
+        <div id="fecha-display"></div>
+      </div>
+      <div class="media-video">
+        <iframe id="video-frame" src="" allowfullscreen style="display:none"></iframe>
+        <video id="video-uploaded" src="" autoplay muted loop style="display:none"></video>
+      </div>
+      <div class="ticker-wrap">
+        <div class="ticker-content" id="ticker-content">
+          <span id="ticker-mensaje">Bienvenido al sistema de turnos electrónico</span>
+          <span class="sep">◆</span>
+          <span id="ticker-horario"></span>
+          <span class="sep">◆</span>
+          <span id="ticker-nombre"></span>
+          <span class="sep">◆</span>
+          <span>Gracias por su visita</span>
+        </div>
+      </div>
     </div>
   </div>
-
-  <div class="video-panel">
-    <iframe id="video-frame" src="" allowfullscreen></iframe>
-    <video id="video-uploaded" src="" autoplay muted loop style="display:none;width:100%;border-radius:10px"></video>
-    <p>Entretenimiento mientras espera</p>
-  </div>
-
-  <footer>
-    <span id="mensaje-footer">Bienvenido al sistema de turnos electrónico</span>
-    &nbsp;|&nbsp;
-    <span id="horario-footer"></span>
-  </footer>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     let historial = [];
 
-    // Reloj
+    // Reloj + fecha
     function actualizarReloj() {
-      document.getElementById('reloj').textContent = new Date().toLocaleTimeString('es-ES');
+      const ahora = new Date();
+      document.getElementById('reloj').textContent = ahora.toLocaleTimeString('es-ES');
+      document.getElementById('fecha-display').textContent = ahora.toLocaleDateString('es-ES', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      });
     }
     setInterval(actualizarReloj, 1000);
     actualizarReloj();
@@ -153,85 +239,98 @@
       try {
         const res = await fetch('/api/config');
         const config = await res.json();
-        if (config.nombre) document.getElementById('hospital-nombre').textContent = config.nombre;
 
-        // Logo
+        // Nombre del hospital
+        const nombre = config.nombre || 'E-TURNS';
+        document.getElementById('ticker-nombre').textContent = nombre;
+
+        // Logo grande y centrado
         const logoUrl = config.logo_url || config.logo;
         if (logoUrl) {
           const logoEl = document.getElementById('hospital-logo');
           logoEl.src = logoUrl;
           logoEl.style.display = 'block';
           document.getElementById('hospital-nombre').style.display = 'none';
+        } else {
+          document.getElementById('hospital-nombre').textContent = nombre;
         }
 
-        // Colores dinámicos
-        const colorPrimario = config.colorPrimario || '#0d6efd';
-        const colorSecundario = config.colorSecundario || '#198754';
-        document.getElementById('header-bar').style.background =
-          `linear-gradient(90deg, ${colorPrimario}, ${colorSecundario})`;
-        document.getElementById('turno-ventanilla-style').textContent =
-          `.turno-ventanilla { background: ${colorPrimario}; }`;
+        // Color de fondo pantalla
+        if (config.color_fondo_pantalla) {
+          document.body.style.background = config.color_fondo_pantalla;
+          document.querySelector('.panel-media').style.background = adjustColor(config.color_fondo_pantalla, -15);
+        }
+
+        // Colores primarios → turno número y ventanilla
+        const colorPrimario = config.color_pantalla_primario || config.colorPrimario || '#0dcaf0';
+        const colorSecundario = config.color_pantalla_secundario || config.colorSecundario || '#0d6efd';
+        document.getElementById('dynamic-styles').textContent = `
+          .turno-numero:not(.sin-turno) { color: ${colorPrimario}; text-shadow: 0 0 60px ${colorPrimario}55; }
+          .turno-ventanilla { background: ${colorSecundario}; }
+          .ticker-content .sep { color: ${colorSecundario}; }
+          #reloj { color: ${colorPrimario}; }
+        `;
 
         // Video
         if (config.video_fuente === 'archivo' && config.video_url) {
           const videoEl = document.getElementById('video-uploaded');
-          if (videoEl) {
-            videoEl.src = config.video_url;
-            videoEl.style.display = 'block';
-            videoEl.play().catch((err) => { console.warn('Autoplay bloqueado por el navegador:', err); });
-          }
-          document.getElementById('video-frame').style.display = 'none';
+          videoEl.src = config.video_url;
+          videoEl.style.display = 'block';
+          videoEl.play().catch(() => {});
         } else if (config.videoYoutube) {
-          const videoFrame = document.getElementById('video-frame');
-          videoFrame.src = config.videoYoutube + '?autoplay=1&mute=1&loop=1';
-          videoFrame.style.display = 'block';
-
-          // Tamaño de video
-          const sizeMap = { 'pequeño': '25%', 'mediano': '40%', 'grande': '60%', 'completo': '100%' };
-          const videoSize = config.video_size ? sizeMap[config.video_size] || config.video_size : null;
-          if (videoSize) {
-            const videoPanel = document.querySelector('.video-panel');
-            if (videoSize === '100%') {
-              videoPanel.style.width = '100%';
-              document.body.style.gridTemplateColumns = '1fr';
-              videoPanel.style.position = 'fixed';
-              videoPanel.style.inset = '0';
-              videoPanel.style.zIndex = '-1';
-              videoPanel.style.borderLeft = 'none';
-            } else {
-              videoPanel.style.width = videoSize;
-              document.body.style.gridTemplateColumns = `1fr ${videoSize}`;
-            }
-          }
+          const frame = document.getElementById('video-frame');
+          frame.src = config.videoYoutube + '?autoplay=1&mute=1&loop=1&playlist=' + getYtId(config.videoYoutube);
+          frame.style.display = 'block';
         }
 
-        if (config.color_fondo_pantalla) {
-          document.body.style.background = config.color_fondo_pantalla;
+        // Mensaje ticker
+        if (config.mensaje) {
+          document.getElementById('ticker-mensaje').textContent = config.mensaje;
         }
 
         // Horario
         if (config.horario_apertura || config.horario_cierre) {
-          const apertura = config.horario_apertura || '07:00';
-          const cierre = config.horario_cierre || '17:00';
-          const horarioEl = document.getElementById('horario-footer');
-          if (horarioEl) horarioEl.textContent = `Horario: ${apertura} - ${cierre}`;
+          const ap = config.horario_apertura || '07:00';
+          const ci = config.horario_cierre || '17:00';
+          document.getElementById('ticker-horario').textContent = `Horario de atención: ${ap} – ${ci}`;
         }
 
-        if (config.mensaje) document.getElementById('mensaje-footer').textContent = config.mensaje;
+        // Velocidad ticker (más lento si texto largo)
+        ajustarVelocidadTicker();
 
-        // Voz TTS
-        if (config.voz_tts) {
-          window._vozTts = config.voz_tts;
-        }
-      } catch (e) {}
+        // TTS
+        if (config.voz_tts) window._vozTts = config.voz_tts;
+
+      } catch (e) { console.warn('Error al cargar config:', e); }
     }
 
-    // Mostrar turno llamado
+    function getYtId(url) {
+      const m = url.match(/embed\/([^?]+)/);
+      return m ? m[1] : '';
+    }
+
+    function adjustColor(hex, amount) {
+      const c = hex.replace('#','');
+      const num = parseInt(c.length === 3 ? c.split('').map(x=>x+x).join('') : c, 16);
+      const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+      const g = Math.max(0, Math.min(255, ((num >> 8) & 0xFF) + amount));
+      const b = Math.max(0, Math.min(255, (num & 0xFF) + amount));
+      return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+    }
+
+    function ajustarVelocidadTicker() {
+      const ticker = document.getElementById('ticker-content');
+      const text = ticker.textContent || '';
+      const dur = Math.max(20, Math.round(text.length * 0.18));
+      ticker.style.animationDuration = dur + 's';
+    }
+
+    // Mostrar turno
     function mostrarTurno(turno) {
       const numEl = document.getElementById('turno-numero');
       numEl.classList.remove('sin-turno', 'nuevo-turno');
       numEl.textContent = turno.numero;
-      void numEl.offsetWidth; // reflow para reiniciar animación
+      void numEl.offsetWidth;
       numEl.classList.add('nuevo-turno');
 
       document.getElementById('turno-area').textContent = turno.area || '';
@@ -243,12 +342,9 @@
         ventEl.style.display = 'none';
       }
 
-      // Agregar al historial
       historial.unshift(turno);
       if (historial.length > 5) historial.pop();
       renderHistorial();
-
-      // TTS — anuncio por voz
       anunciarVoz(turno);
     }
 
@@ -256,49 +352,36 @@
       const el = document.getElementById('historial-list');
       el.innerHTML = historial.slice(1).map(t => `
         <div class="historial-item">
-          <span>${t.numero}</span>
-          <span>${t.area}</span>
-          <span style="color:#6c757d;font-size:0.8rem">${t.ventanilla || ''}</span>
+          <span>${escHtml(t.numero)}</span>
+          <span>${escHtml(t.area)}</span>
+          <span style="color:#495057;font-size:0.8rem">${escHtml(t.ventanilla || '')}</span>
         </div>
       `).join('');
     }
 
-    // Text-to-Speech
+    function escHtml(s) {
+      return String(s || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    // TTS
     function anunciarVoz(turno) {
       if (!window.speechSynthesis) return;
       const msg = new SpeechSynthesisUtterance();
-      const ventanilla = turno.ventanilla ? `, diríjase a ${turno.ventanilla}` : '';
-      msg.text = `Turno ${turno.numero}, área ${turno.area}${ventanilla}`;
-      msg.rate = 0.9;
-      msg.volume = 1;
-
+      const vent = turno.ventanilla ? `, diríjase a ${turno.ventanilla}` : '';
+      msg.text = `Turno ${turno.numero}, área ${turno.area}${vent}`;
+      msg.rate = 0.9; msg.volume = 1;
       const vozNombre = window._vozTts || null;
       const voices = window.speechSynthesis.getVoices();
-      let vozSeleccionada = null;
-
-      if (vozNombre && voices.length > 0) {
-        vozSeleccionada = voices.find(v => v.name === vozNombre) || null;
-      }
-      if (!vozSeleccionada && voices.length > 0) {
-        vozSeleccionada = voices.find(v => v.lang && v.lang.startsWith('es')) || null;
-      }
-
-      if (vozSeleccionada) {
-        msg.voice = vozSeleccionada;
-      } else {
-        msg.lang = 'es-ES';
-      }
-
+      let voz = vozNombre ? voices.find(v => v.name === vozNombre) : null;
+      if (!voz) voz = voices.find(v => v.lang && v.lang.startsWith('es')) || null;
+      if (voz) msg.voice = voz; else msg.lang = 'es-ES';
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(msg);
     }
 
-    // Socket.IO
-    socket.on('turn_called', (turno) => {
-      mostrarTurno(turno);
-    });
-
-    // Inicializar
+    socket.on('turn_called', mostrarTurno);
     cargarConfig();
   </script>
 </body>

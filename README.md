@@ -67,7 +67,7 @@ Kiosco → Sala de Espera → [Llamar a Facturación] → En Facturación
 ```
 
 ### Tipos de turno especiales
-- **Entrega de Resultados**: va directamente a Espera Toma de Muestra (salta Facturación)
+- **Entrega de Resultados**: pasa por Facturación primero (como todos los demás tipos)
 - **Turno Preferencial**: cualquier tipo marcado como prioritario (borde dorado en Kanban)
 
 ## Configuración
