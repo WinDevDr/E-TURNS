@@ -64,14 +64,12 @@ function initDatabase() {
     const configPath = path.join(__dirname, '..', 'config', 'config.json');
     const config = require(configPath);
 
-    db.get('SELECT COUNT(*) as count FROM areas', (err, row) => {
-      if (!err && row.count === 0) {
-        const stmt = db.prepare('INSERT INTO areas (nombre, prefijo, color) VALUES (?, ?, ?)');
-        config.areas.forEach(area => {
-          stmt.run(area.nombre, area.prefijo, area.color);
-        });
-        stmt.finalize();
-      }
+    // Sembrar áreas por defecto si no existen (idempotente por nombre)
+    config.areas.forEach(area => {
+      db.run(
+        'INSERT INTO areas (nombre, prefijo, color) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM areas WHERE nombre = ?)',
+        [area.nombre, area.prefijo, area.color, area.nombre]
+      );
     });
 
     // Insertar configuración por defecto si no existe
@@ -120,15 +118,22 @@ function initDatabase() {
       }
     });
 
-    // Nuevas columnas en turnos
-    db.run(`ALTER TABLE turnos ADD COLUMN tipo_paciente TEXT`, () => {});
-    db.run(`ALTER TABLE turnos ADD COLUMN etapa TEXT DEFAULT 'espera_sala'`, () => {});
-    db.run(`ALTER TABLE turnos ADD COLUMN preferencial INTEGER DEFAULT 0`, () => {});
-    db.run(`ALTER TABLE turnos ADD COLUMN llamado_por TEXT`, () => {});
-    db.run(`ALTER TABLE turnos ADD COLUMN atendido_por_facturacion TEXT`, () => {});
-    db.run(`ALTER TABLE turnos ADD COLUMN fecha_llamado_facturacion DATETIME`, () => {});
-    db.run(`ALTER TABLE turnos ADD COLUMN atendido_por_muestra TEXT`, () => {});
-    db.run(`ALTER TABLE turnos ADD COLUMN fecha_llamado_muestra DATETIME`, () => {});
+    // Nuevas columnas en turnos (ALTER TABLE ignora error si la columna ya existe)
+    const turnosCols = [
+      `ALTER TABLE turnos ADD COLUMN tipo_paciente TEXT`,
+      `ALTER TABLE turnos ADD COLUMN etapa TEXT DEFAULT 'espera_sala'`,
+      `ALTER TABLE turnos ADD COLUMN preferencial INTEGER DEFAULT 0`,
+      `ALTER TABLE turnos ADD COLUMN llamado_por TEXT`,
+      `ALTER TABLE turnos ADD COLUMN atendido_por_facturacion TEXT`,
+      `ALTER TABLE turnos ADD COLUMN fecha_llamado_facturacion DATETIME`,
+      `ALTER TABLE turnos ADD COLUMN atendido_por_muestra TEXT`,
+      `ALTER TABLE turnos ADD COLUMN fecha_llamado_muestra DATETIME`
+    ];
+    turnosCols.forEach(sql => db.run(sql, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.warn('[DB] Advertencia migración:', err.message);
+      }
+    }));
 
     // Tabla de sucursales
     db.run(`CREATE TABLE IF NOT EXISTS sucursales (
