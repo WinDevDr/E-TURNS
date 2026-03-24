@@ -347,10 +347,16 @@ module.exports = {
       WHERE id = ?
     `).run(turnId);
 
-    db.prepare(`
-      INSERT INTO turn_history (turn_id, area_id, operator_id, action)
-      VALUES (?, ?, ?, 'cancelled')
-    `).run(turnId, turn.current_area_id || 1, operatorId);
+    const areaId = turn.current_area_id
+      || db.prepare('SELECT id FROM areas WHERE active = 1 ORDER BY display_order LIMIT 1').get()?.id
+      || null;
+
+    if (areaId) {
+      db.prepare(`
+        INSERT INTO turn_history (turn_id, area_id, operator_id, action)
+        VALUES (?, ?, ?, 'cancelled')
+      `).run(turnId, areaId, operatorId);
+    }
 
     return db.prepare(`
       SELECT t.*, tt.name as type_name, tt.prefix
