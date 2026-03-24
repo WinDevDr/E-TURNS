@@ -59,8 +59,10 @@
   <header>
     <h1>📊 Estadísticas — E-TURNS</h1>
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <input type="date" id="filtro-fecha" style="padding:0.4rem 0.75rem;border-radius:8px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.15);color:#fff;font-size:0.9rem">
       <span class="actualiza" id="ultima-actualizacion">Cargando...</span>
-      <button class="btn-refresh" onclick="cargarStats()">🔄 Actualizar</button>
+      <button class="btn-refresh" onclick="cargarTodo()">🔄 Actualizar</button>
+      <button class="btn-refresh" onclick="exportarCSV()" style="background:rgba(25,135,84,0.7)">📥 Exportar CSV</button>
       <a href="/home" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:0.4rem 0.9rem;text-decoration:none;font-size:0.9rem;font-weight:600">🏠 Inicio</a>
       <form action="/auth/logout" method="POST" style="display:inline">
         <button type="submit" style="background:rgba(220,53,69,0.85);color:#fff;border:none;border-radius:8px;padding:0.4rem 0.9rem;cursor:pointer;font-size:0.9rem;font-weight:600">🚪 Cerrar Sesión</button>
@@ -102,11 +104,38 @@
         <tbody id="tabla-horas"><tr><td colspan="3" class="empty">Cargando...</td></tr></tbody>
       </table>
     </div>
+
+    <!-- Detalle de turnos -->
+    <div class="card">
+      <h2>📋 Detalle de Turnos del Día</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Número</th><th>Tipo</th><th>Pref.</th><th>Área</th>
+              <th>Hora Llegada</th><th>Llamado Fact.</th><th>Atend. Fact.</th>
+              <th>Llamado Muestra</th><th>Atend. Muestra</th><th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-detalle"><tr><td colspan="11" class="empty">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
+
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function getFecha() {
+      return document.getElementById('filtro-fecha').value || new Date().toISOString().split('T')[0];
+    }
 
     async function cargarStats() {
       try {
@@ -155,14 +184,59 @@
       }
     }
 
+    async function cargarDetalle() {
+      try {
+        const fecha = getFecha();
+        const res = await fetch(`/api/stats/detalle?fecha=${encodeURIComponent(fecha)}`);
+        const turnos = await res.json();
+        const tbody = document.getElementById('tabla-detalle');
+        if (!turnos || turnos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="11" class="empty">Sin turnos para la fecha seleccionada.</td></tr>';
+          return;
+        }
+        const fmt = v => v ? new Date(v).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—';
+        tbody.innerHTML = turnos.map((t, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td><strong>${escHtml(t.numero)}</strong></td>
+            <td>${escHtml(t.tipo_paciente)}</td>
+            <td>${t.preferencial ? '⭐' : ''}</td>
+            <td>${escHtml(t.area)}</td>
+            <td>${fmt(t.fecha_hora)}</td>
+            <td>${fmt(t.fecha_llamado_facturacion)}</td>
+            <td>${escHtml(t.atendido_por_facturacion)}</td>
+            <td>${fmt(t.fecha_llamado_muestra)}</td>
+            <td>${escHtml(t.atendido_por_muestra)}</td>
+            <td>${escHtml(t.estado)}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        document.getElementById('tabla-detalle').innerHTML = '<tr><td colspan="11" class="empty">Error al cargar detalle.</td></tr>';
+      }
+    }
+
+    function exportarCSV() {
+      const fecha = getFecha();
+      window.location.href = `/api/stats/exportar?fecha=${encodeURIComponent(fecha)}`;
+    }
+
+    function cargarTodo() {
+      cargarStats();
+      cargarDetalle();
+    }
+
+    // Inicializar fecha con hoy
+    document.getElementById('filtro-fecha').value = new Date().toISOString().split('T')[0];
+    document.getElementById('filtro-fecha').addEventListener('change', cargarTodo);
+
     // Actualizar cada 30 segundos
     setInterval(cargarStats, 30000);
 
     socket.on('stats_updated', cargarStats);
-    socket.on('turn_added', cargarStats);
+    socket.on('turn_added', cargarTodo);
 
     // Inicializar
-    cargarStats();
+    cargarTodo();
   </script>
 </body>
 </html>

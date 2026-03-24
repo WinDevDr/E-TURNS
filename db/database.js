@@ -120,6 +120,16 @@ function initDatabase() {
       }
     });
 
+    // Nuevas columnas en turnos
+    db.run(`ALTER TABLE turnos ADD COLUMN tipo_paciente TEXT`, () => {});
+    db.run(`ALTER TABLE turnos ADD COLUMN etapa TEXT DEFAULT 'espera_sala'`, () => {});
+    db.run(`ALTER TABLE turnos ADD COLUMN preferencial INTEGER DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE turnos ADD COLUMN llamado_por TEXT`, () => {});
+    db.run(`ALTER TABLE turnos ADD COLUMN atendido_por_facturacion TEXT`, () => {});
+    db.run(`ALTER TABLE turnos ADD COLUMN fecha_llamado_facturacion DATETIME`, () => {});
+    db.run(`ALTER TABLE turnos ADD COLUMN atendido_por_muestra TEXT`, () => {});
+    db.run(`ALTER TABLE turnos ADD COLUMN fecha_llamado_muestra DATETIME`, () => {});
+
     // Tabla de sucursales
     db.run(`CREATE TABLE IF NOT EXISTS sucursales (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

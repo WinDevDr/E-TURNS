@@ -1,195 +1,100 @@
-# E-TURNS — Sistema Electrónico de Gestión de Turnos
+# E-TURNS — Sistema Electrónico de Turnos
 
-Sistema completo de gestión de turnos para hospitales y centros de salud. Desarrollado con Node.js, Express, Socket.IO y SQLite3.
+Sistema de gestión de turnos electrónico para instituciones de salud, construido con Node.js, Express, Socket.IO y SQLite3.
 
----
+## Características
 
-## 📦 Tecnologías
+- **Kiosco touchscreen** para solicitar turnos por tipo de paciente (Asegurado, No Asegurado, Entrega de Resultados, Toma de Muestra, Pre-Empleo, Turno Preferencial)
+- **Panel operador Kanban** con columnas de flujo: Sala de Espera → Facturación → Espera Toma de Muestra → Toma de Muestra
+- **Pantalla pública** con TTS (text-to-speech) para anuncio de turnos y video publicitario (YouTube o archivo subido)
+- **Administración** completa: usuarios, ventanillas, áreas, configuración visual, horarios, colores del kiosco
+- **Estadísticas** con exportación CSV y filtro por fecha
+- **Tiempo real** vía Socket.IO
+- **Turnos preferenciales** con indicador visual dorado
 
-- **Node.js + Express** — Servidor web
-- **Socket.IO** — Comunicación en tiempo real
-- **SQLite3** — Base de datos local
-- **express-session + bcryptjs** — Autenticación con roles
-- **multer** — Subida de archivos (logos)
-- **Web Speech API** — Anuncio de turnos por voz (TTS) en español
-
----
-
-## 🚀 Instalación y Ejecución
+## Instalación
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/WinDevDr/E-TURNS.git
+git clone <url-del-repositorio>
 cd E-TURNS
-
-# Instalar dependencias
 npm install
-
-# (Opcional) Configurar variables de entorno
-cp .env.example .env
-# Editar .env y establecer SESSION_SECRET
-
-# Iniciar el servidor
+cp .env.example .env  # Edite con sus valores
 npm start
 ```
 
-El servidor estará disponible en `http://localhost:3000`
+El servidor inicia en `http://localhost:3000` (o el `PORT` configurado).
 
-Al iniciar, el sistema redirige automáticamente a la página de **login** en `/login`.
+## Credenciales por defecto
 
----
+| Usuario   | Contraseña | Rol      |
+|-----------|------------|----------|
+| `adiaz`   | `admin123` | Admin    |
+| `jperez`  | `op123`    | Operador |
 
-## 🔐 Usuarios por Defecto
+> **Cambie estas credenciales antes de usar en producción.**
 
-> Estos usuarios se crean automáticamente la primera vez que se inicia el servidor.
+## Roles del sistema
 
-| Usuario | Contraseña | Rol | Nombre completo |
-|---------|------------|-----|-----------------|
-| `adiaz` | `admin123` | Administrador | Ana Diaz |
-| `jperez` | `op123` | Operador | Juan Perez |
+| Rol       | Acceso                                                |
+|-----------|-------------------------------------------------------|
+| `admin`   | Administración, estadísticas, panel, kiosco, pantalla |
+| `operador`| Panel de operador                                     |
 
-> ⚠️ **Recomendación de seguridad:** Cambie las contraseñas por defecto antes de poner el sistema en producción.
+## Guía de páginas
 
----
+| Ruta          | Descripción                              | Acceso      |
+|---------------|------------------------------------------|-------------|
+| `/kiosco`     | Kiosco touchscreen para pacientes        | Público     |
+| `/panel`      | Panel Kanban del operador                | Autenticado |
+| `/pantalla`   | Pantalla pública de llamado de turnos    | Público     |
+| `/admin`      | Administración del sistema               | Admin       |
+| `/stats`      | Estadísticas y exportación CSV           | Admin       |
+| `/home`       | Menú principal admin                     | Admin       |
 
-## 🖥️ Módulos del Sistema
-
-| Módulo | URL | Acceso | Descripción |
-|--------|-----|--------|-------------|
-| 🔐 **Login** | `/login` | Público | Página de inicio de sesión con selector de rol |
-| 🏠 **Dashboard Admin** | `/home` | Solo Admin | Panel con acceso a todos los módulos |
-| 🖥️ **Kiosco** | `/kiosco` | Público | Pantalla táctil donde el paciente selecciona el área y obtiene su turno |
-| 👩‍💼 **Panel Operador** | `/panel` | Autenticado | Panel para llamar, repetir, atender y transferir turnos |
-| 📺 **Pantalla Pública** | `/pantalla` | Público | Pantalla TV con turno actual, anuncio por voz y video YouTube |
-| ⚙️ **Administración** | `/admin` | Solo Admin | Configurar logo, áreas (con logos), ventanillas y datos del hospital |
-| 📊 **Estadísticas** | `/stats` | Solo Admin | Dashboard de turnos atendidos, tiempos de espera y más |
-
----
-
-## 🔌 API REST
-
-### Autenticación
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/auth/login` | Iniciar sesión (body: `{ "username", "password", "rol" }`) |
-| `POST` | `/auth/logout` | Cerrar sesión |
-| `GET` | `/auth/me` | Obtener usuario de sesión actual |
-
-### Turnos
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/api/turnos` | Obtener todos los turnos |
-| `POST` | `/api/turnos` | Crear nuevo turno (body: `{ "area": "Consulta" }`) |
-| `PUT` | `/api/turnos/:id/llamar` | Marcar turno como llamado |
-| `PUT` | `/api/turnos/:id/atender` | Marcar turno como atendido |
-
-### Áreas *(requiere admin)*
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/api/areas` | Obtener áreas |
-| `POST` | `/api/areas` | Crear área (body: `{ "nombre", "prefijo", "color" }`) |
-| `PUT` | `/api/areas/:id/logo` | Subir logo de área (multipart, campo: `logo`) |
-| `DELETE` | `/api/areas/:id` | Eliminar área |
-
-### Ventanillas *(requiere admin)*
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/api/ventanillas` | Listar ventanillas |
-| `POST` | `/api/ventanillas` | Crear ventanilla (body: `{ "nombre" }`) |
-| `PUT` | `/api/ventanillas/:id` | Renombrar ventanilla (body: `{ "nombre" }`) |
-| `PUT` | `/api/ventanillas/:id/usuario` | Asignar operador (body: `{ "usuario_id" }`) |
-| `DELETE` | `/api/ventanillas/:id` | Eliminar ventanilla |
-
-### Configuración *(requiere admin)*
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/api/config` | Obtener configuración del hospital |
-| `PUT` | `/api/config` | Actualizar configuración (JSON) |
-| `PUT` | `/api/config/logo` | Subir logo del sistema (multipart, campo: `logo`) |
-| `GET` | `/api/stats` | Estadísticas del día |
-
----
-
-## ⚡ Eventos Socket.IO
-
-| Evento emitido | Evento recibido | Descripción |
-|----------------|-----------------|-------------|
-| `new_turn` | `turn_added` | Nuevo turno generado |
-| `call_turn` | `turn_called` | Turno llamado (muestra en pantalla + TTS) |
-| `repeat_turn` | `turn_called` | Repetir llamada de turno |
-| `update_stats` | `stats_updated` | Actualizar estadísticas |
-
----
-
-## ⚙️ Variables de Entorno
-
-Crea un archivo `.env` basado en `.env.example`:
+## Flujo de trabajo
 
 ```
-PORT=3000
-DB_PATH=./e-turns.db
-SESSION_SECRET=cambia_esto_por_una_clave_secreta_segura
+Kiosco → Sala de Espera → [Llamar a Facturación] → En Facturación
+                                                          |
+                                              [Solo Facturación] → Atendido
+                                              [Pasar a Toma de Muestra]
+                                                          |
+                                              Espera Toma de Muestra
+                                                          |
+                                              [Llamar a Toma de Muestra] → En Toma de Muestra
+                                                          |
+                                              [Atendido] → Completado
 ```
 
-| Variable | Descripción | Valor por defecto |
-|----------|-------------|-------------------|
-| `PORT` | Puerto del servidor | `3000` |
-| `DB_PATH` | Ruta del archivo SQLite | `./e-turns.db` |
-| `SESSION_SECRET` | Clave secreta para sesiones | *(valor de desarrollo, cambiar en producción)* |
+### Tipos de turno especiales
+- **Entrega de Resultados**: va directamente a Espera Toma de Muestra (salta Facturación)
+- **Turno Preferencial**: cualquier tipo marcado como prioritario (borde dorado en Kanban)
 
----
+## Configuración
 
-## 📁 Estructura del Proyecto
+Desde `/admin` puede configurar:
+- Nombre e imagen del hospital/institución
+- Colores del sistema y del kiosco
+- Video publicitario (URL YouTube o archivo MP4/WebM)
+- Horario de atención (mostrado en pantalla pública)
+- Usuarios y ventanillas
+- Voz TTS para anuncios
 
-```
-E-TURNS/
-├── .env.example
-├── .gitignore
-├── package.json
-├── server.js
-├── config/
-│   └── config.json
-├── db/
-│   └── database.js
-├── middleware/
-│   └── authMiddleware.js
-├── routes/
-│   ├── api.js
-│   └── auth.js
-├── sockets/
-│   └── events.js
-└── public/
-    ├── login/
-    │   └── index.html
-    ├── home/
-    │   └── index.html
-    ├── kiosco/
-    │   ├── index.html
-    │   └── kiosco.js
-    ├── panel/
-    │   └── index.html
-    ├── pantalla/
-    │   └── index.html
-    ├── admin/
-    │   └── index.html
-    ├── stats/
-    │   └── index.html
-    └── uploads/
-        ├── logo/       ← Logo del sistema
-        └── areas/      ← Logos por área
-```
+## Variables de entorno
 
----
+| Variable          | Descripción                           | Default              |
+|-------------------|---------------------------------------|----------------------|
+| `PORT`            | Puerto del servidor                   | `3000`               |
+| `SESSION_SECRET`  | Clave secreta para sesiones           | `eturns-secret-2024` |
+| `DB_PATH`         | Ruta a la base de datos SQLite        | `./e-turns.db`       |
+| `NODE_ENV`        | Entorno (`production`/`development`)  | `development`        |
 
-## 👤 Autor
+## Stack tecnológico
 
-**WinDevDr** — [GitHub](https://github.com/WinDevDr)
-
-## 📄 Licencia
-
-ISC
+- **Backend**: Node.js + Express 4
+- **Tiempo real**: Socket.IO 4
+- **Base de datos**: SQLite3
+- **Sesiones**: express-session
+- **Archivos**: Multer (logos, videos)
+- **Rate limiting**: express-rate-limit
+- **Seguridad**: bcryptjs, httpOnly cookies, HTML escaping

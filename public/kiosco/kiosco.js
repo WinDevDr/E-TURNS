@@ -15,47 +15,35 @@ async function cargarConfig() {
       logo.src = logoUrl;
       logo.style.display = 'block';
     }
+    // Aplicar colores del kiosco al header
+    const primario = config.color_kiosco_primario || config.colorPrimario || '#0d6efd';
+    const secundario = config.color_kiosco_secundario || config.colorSecundario || '#198754';
+    const header = document.getElementById('kiosco-header');
+    if (header) header.style.background = `linear-gradient(90deg, ${primario}, ${secundario})`;
   } catch (e) {
     console.error('Error al cargar config:', e);
   }
 }
 
-// Cargar áreas dinámicamente
-async function cargarAreas() {
-  try {
-    const res = await fetch('/api/areas');
-    const areas = await res.json();
-    const grid = document.getElementById('areas-grid');
-    grid.innerHTML = '';
-
-    if (areas.length === 0) {
-      grid.innerHTML = '<p style="color:#888;text-align:center">No hay áreas configuradas.</p>';
-      return;
-    }
-
-    areas.forEach(area => {
-      const btn = document.createElement('button');
-      btn.className = 'area-btn';
-      btn.style.background = area.color || '#0d6efd';
-      // Mostrar solo el nombre del área (sin prefijo) en el botón
-      const span = document.createElement('span');
-      span.textContent = area.nombre;
-      btn.appendChild(span);
-      btn.addEventListener('click', () => solicitarTurno(area.nombre));
-      grid.appendChild(btn);
-    });
-  } catch (e) {
-    document.getElementById('areas-grid').innerHTML = '<p style="color:red">Error al cargar áreas.</p>';
-  }
+// Solicitar turno normal
+async function solicitarTurno(tipo) {
+  const area = tipo === 'Entrega de Resultados' ? 'Toma de Muestra' : 'Facturación';
+  await _crearTurno(tipo, area, 0);
 }
 
-// Solicitar turno
-async function solicitarTurno(area) {
+// Solicitar turno preferencial
+async function solicitarTurnoPref(tipo) {
+  cerrarModalPreferencial();
+  const area = tipo === 'Entrega de Resultados' ? 'Toma de Muestra' : 'Facturación';
+  await _crearTurno(tipo, area, 1);
+}
+
+async function _crearTurno(tipo_paciente, area, preferencial) {
   try {
     const res = await fetch('/api/turnos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ area })
+      body: JSON.stringify({ area, tipo_paciente, preferencial })
     });
 
     if (!res.ok) {
@@ -67,17 +55,29 @@ async function solicitarTurno(area) {
     const turno = await res.json();
     turnoActual = turno;
 
-    // Mostrar modal
+    // Mostrar modal de ticket
     document.getElementById('ticket-numero').textContent = turno.numero;
     document.getElementById('ticket-area').textContent = turno.area;
+    document.getElementById('ticket-tipo').textContent = turno.tipo_paciente ? `Tipo: ${turno.tipo_paciente}` : '';
     document.getElementById('ticket-hora').textContent = new Date(turno.fecha_hora).toLocaleString('es-ES');
+
+    const prefBadge = document.getElementById('ticket-pref-badge');
+    prefBadge.innerHTML = turno.preferencial ? '<span class="badge-pref">⭐ Preferencial</span>' : '';
+
     document.getElementById('modal-ticket').classList.add('active');
 
-    // Emitir evento al socket
     socket.emit('new_turn', turno);
   } catch (e) {
     alert('Error al solicitar turno. Intente nuevamente.');
   }
+}
+
+function abrirModalPreferencial() {
+  document.getElementById('modal-preferencial').classList.add('active');
+}
+
+function cerrarModalPreferencial() {
+  document.getElementById('modal-preferencial').classList.remove('active');
 }
 
 function cerrarModal() {
@@ -93,7 +93,15 @@ function imprimirTicket() {
     ? `<img src="${logoUrl}" alt="Logo" style="max-height:80px;max-width:180px;object-fit:contain;margin-bottom:0.5rem">`
     : `<h2 style="margin-bottom:0.5rem">${nombreInst}</h2>`;
 
-  const win = window.open('', '_blank', 'width=400,height=550');
+  const prefHtml = turnoActual.preferencial
+    ? `<p style="color:#f59e0b;font-weight:700">⭐ Turno Preferencial</p>`
+    : '';
+
+  const tipoHtml = turnoActual.tipo_paciente
+    ? `<p><strong>Tipo:</strong> ${turnoActual.tipo_paciente}</p>`
+    : '';
+
+  const win = window.open('', '_blank', 'width=400,height=580');
   win.document.write(`
     <!DOCTYPE html>
     <html lang="es">
@@ -111,8 +119,10 @@ function imprimirTicket() {
     <body>
       ${logoHtml}
       <hr>
+      ${prefHtml}
       <div class="numero">${turnoActual.numero}</div>
       <p><strong>Área:</strong> ${turnoActual.area}</p>
+      ${tipoHtml}
       <p><strong>Hora:</strong> ${new Date(turnoActual.fecha_hora).toLocaleString('es-ES')}</p>
       <hr>
       <p>Por favor espere a ser llamado.</p>
@@ -125,4 +135,3 @@ function imprimirTicket() {
 
 // Inicializar
 cargarConfig();
-cargarAreas();

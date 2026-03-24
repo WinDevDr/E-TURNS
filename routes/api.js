@@ -70,8 +70,18 @@ router.get('/turnos', (req, res) => {
 
 // POST /api/turnos — crear nuevo turno
 router.post('/turnos', (req, res) => {
-  const { area } = req.body;
-  if (!area) return res.status(400).json({ error: 'El campo area es requerido.' });
+  const { tipo_paciente, preferencial } = req.body;
+  let { area } = req.body;
+
+  // Determinar área según tipo de paciente
+  if (tipo_paciente === 'Entrega de Resultados') {
+    area = 'Toma de Muestra';
+  } else if (!area) {
+    area = 'Facturación';
+  }
+
+  const etapa_inicial = tipo_paciente === 'Entrega de Resultados' ? 'espera_muestra' : 'espera_sala';
+  const esPreferencial = preferencial ? 1 : 0;
 
   // Obtener prefijo del área
   db.get('SELECT prefijo FROM areas WHERE nombre = ?', [area], (err, areaRow) => {
@@ -92,8 +102,8 @@ router.post('/turnos', (req, res) => {
         const numero = `${prefijo}${String(siguiente).padStart(2, '0')}`;
 
         db.run(
-          'INSERT INTO turnos (numero, area, estado) VALUES (?, ?, ?)',
-          [numero, area, 'esperando'],
+          'INSERT INTO turnos (numero, area, estado, tipo_paciente, etapa, preferencial) VALUES (?, ?, ?, ?, ?, ?)',
+          [numero, area, 'esperando', tipo_paciente || null, etapa_inicial, esPreferencial],
           function (err) {
             if (err) return res.status(500).json({ error: err.message });
             db.get('SELECT * FROM turnos WHERE id = ?', [this.lastID], (err, turno) => {
@@ -108,31 +118,80 @@ router.post('/turnos', (req, res) => {
 });
 
 // PUT /api/turnos/:id/llamar
-router.put('/turnos/:id/llamar', (req, res) => {
+router.put('/turnos/:id/llamar', requireAuth, (req, res) => {
   const { id } = req.params;
   const { ventanilla } = req.body;
+  const operador = req.session.nombre || req.session.username || ventanilla || '';
 
-  db.run(
-    'UPDATE turnos SET estado = ?, ventanilla = ? WHERE id = ?',
-    ['llamado', ventanilla || '', id],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) return res.status(404).json({ error: 'Turno no encontrado.' });
-      db.get('SELECT * FROM turnos WHERE id = ?', [id], (err, turno) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(turno);
-      });
+  db.get('SELECT * FROM turnos WHERE id = ?', [id], (err, turno) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!turno) return res.status(404).json({ error: 'Turno no encontrado.' });
+
+    const etapa = turno.etapa || 'espera_sala';
+    let nuevaEtapa, extraCampos, extraVals;
+
+    if (etapa === 'espera_muestra') {
+      nuevaEtapa = 'toma_muestra';
+      extraCampos = ', fecha_llamado_muestra = CURRENT_TIMESTAMP';
+      extraVals = [];
+    } else {
+      nuevaEtapa = 'facturacion';
+      extraCampos = ', fecha_llamado_facturacion = CURRENT_TIMESTAMP';
+      extraVals = [];
     }
-  );
+
+    db.run(
+      `UPDATE turnos SET estado = 'llamado', ventanilla = ?, etapa = ?, llamado_por = ?${extraCampos} WHERE id = ?`,
+      [ventanilla || '', nuevaEtapa, operador, ...extraVals, id],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'Turno no encontrado.' });
+        db.get('SELECT * FROM turnos WHERE id = ?', [id], (err, turnoActualizado) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json(turnoActualizado);
+        });
+      }
+    );
+  });
 });
 
 // PUT /api/turnos/:id/atender
-router.put('/turnos/:id/atender', (req, res) => {
+router.put('/turnos/:id/atender', requireAuth, (req, res) => {
   const { id } = req.params;
+  const operador = req.session.nombre || req.session.username || '';
+
+  db.get('SELECT * FROM turnos WHERE id = ?', [id], (err, turno) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!turno) return res.status(404).json({ error: 'Turno no encontrado.' });
+
+    const etapa = turno.etapa || 'facturacion';
+    let sql;
+
+    if (etapa === 'toma_muestra') {
+      sql = `UPDATE turnos SET estado = 'atendido', etapa = 'completado', atendido_por_muestra = ?, fecha_atendido = CURRENT_TIMESTAMP WHERE id = ?`;
+    } else {
+      sql = `UPDATE turnos SET estado = 'atendido', etapa = 'completado', atendido_por_facturacion = ?, fecha_atendido = CURRENT_TIMESTAMP WHERE id = ?`;
+    }
+
+    db.run(sql, [operador, id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Turno no encontrado.' });
+      db.get('SELECT * FROM turnos WHERE id = ?', [id], (err, turnoActualizado) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(turnoActualizado);
+      });
+    });
+  });
+});
+
+// PUT /api/turnos/:id/pasar-muestra — pasar de facturación a espera_muestra
+router.put('/turnos/:id/pasar-muestra', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const operador = req.session.nombre || req.session.username || '';
 
   db.run(
-    'UPDATE turnos SET estado = ?, fecha_atendido = CURRENT_TIMESTAMP WHERE id = ?',
-    ['atendido', id],
+    `UPDATE turnos SET etapa = 'espera_muestra', estado = 'esperando', atendido_por_facturacion = ? WHERE id = ?`,
+    [operador, id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: 'Turno no encontrado.' });
@@ -413,6 +472,44 @@ router.put('/config/logo', requireAuth, requireAdmin, uploadLogoSistema.single('
   });
 });
 
+// POST /api/config/video — subir video publicitario
+const storageVideo = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '..', 'public', 'uploads', 'video');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `publicidad${ext}`);
+  }
+});
+
+function videoFileFilter(req, file, cb) {
+  const allowed = /^(mp4|webm)$/;
+  const ext = path.extname(file.originalname).toLowerCase().slice(1);
+  if (allowed.test(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Solo se permiten videos MP4 o WebM.'));
+  }
+}
+
+const uploadVideo = multer({ storage: storageVideo, fileFilter: videoFileFilter, limits: { fileSize: 100 * 1024 * 1024 } });
+
+router.post('/config/video', requireAuth, requireAdmin, uploadVideo.single('video'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No se recibió ningún video.' });
+
+  const videoUrl = `/uploads/video/${req.file.filename}`;
+  const stmt = db.prepare('INSERT INTO configuracion (clave, valor) VALUES (?, ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor');
+  stmt.run('video_url', videoUrl);
+  stmt.run('video_fuente', 'archivo');
+  stmt.finalize((err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ video_url: videoUrl });
+  });
+});
+
 // GET /api/config
 router.get('/config', (req, res) => {
   db.all('SELECT clave, valor FROM configuracion', (err, rows) => {
@@ -441,7 +538,7 @@ router.get('/stats', (req, res) => {  const hoy = new Date().toISOString().split
 
   const queries = {
     atendidos: `SELECT COUNT(*) as total FROM turnos WHERE estado = 'atendido' AND DATE(fecha_hora) = ?`,
-    enEspera: `SELECT COUNT(*) as total FROM turnos WHERE estado = 'esperando' AND DATE(fecha_hora) = ?`,
+    enEspera: `SELECT COUNT(*) as total FROM turnos WHERE estado != 'cancelado' AND estado != 'atendido' AND DATE(fecha_hora) = ?`,
     porArea: `SELECT area, COUNT(*) as total FROM turnos WHERE DATE(fecha_hora) = ? GROUP BY area ORDER BY total DESC`,
     porHora: `SELECT strftime('%H', fecha_hora) as hora, COUNT(*) as total FROM turnos WHERE DATE(fecha_hora) = ? GROUP BY hora ORDER BY hora ASC`,
     tiempoPromedio: `
@@ -467,6 +564,64 @@ router.get('/stats', (req, res) => {  const hoy = new Date().toISOString().split
       });
     }
   });
+});
+
+// GET /api/stats/exportar — exportar CSV con turnos del día
+router.get('/stats/exportar', requireAuth, requireAdmin, (req, res) => {
+  const fecha = req.query.fecha || new Date().toISOString().split('T')[0];
+
+  db.all(
+    `SELECT * FROM turnos WHERE DATE(fecha_hora) = ? ORDER BY fecha_hora ASC`,
+    [fecha],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const cols = [
+        '"No."', '"Número"', '"Tipo"', '"Preferencial"', '"Área"', '"Estado"',
+        '"Hora Llegada"', '"Hora Llamado Facturación"', '"Atendido por Facturación"',
+        '"Hora Llamado Toma de Muestra"', '"Atendido por Toma de Muestra"', '"Etapa"'
+      ];
+
+      const csvRows = rows.map((t, i) => {
+        const csvVal = value => `"${String(value || '').replace(/"/g, '""')}"`;
+        return [
+          i + 1,
+          csvVal(t.numero),
+          csvVal(t.tipo_paciente),
+          t.preferencial ? '"Sí"' : '"No"',
+          csvVal(t.area),
+          csvVal(t.estado),
+          csvVal(t.fecha_hora),
+          csvVal(t.fecha_llamado_facturacion),
+          csvVal(t.atendido_por_facturacion),
+          csvVal(t.fecha_llamado_muestra),
+          csvVal(t.atendido_por_muestra),
+          csvVal(t.etapa)
+        ].join(',');
+      });
+
+      const bom = '\uFEFF';
+      const csv = bom + cols.join(',') + '\n' + csvRows.join('\n');
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename=estadisticas-${fecha}.csv`);
+      res.send(csv);
+    }
+  );
+});
+
+// GET /api/stats/detalle — detalle de turnos por fecha
+router.get('/stats/detalle', requireAuth, (req, res) => {
+  const fecha = req.query.fecha || new Date().toISOString().split('T')[0];
+
+  db.all(
+    `SELECT * FROM turnos WHERE DATE(fecha_hora) = ? ORDER BY fecha_hora ASC`,
+    [fecha],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
 });
 
 // ===================== SUCURSALES =====================

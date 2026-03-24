@@ -222,6 +222,77 @@
           <button type="submit" class="btn btn-primary">💾 Guardar Configuración</button>
         </form>
       </div>
+
+      <div class="card">
+        <h2>📺 Video Publicitario</h2>
+        <div class="form-group">
+          <label>Fuente del Video</label>
+          <select id="conf-video_fuente" onchange="toggleVideoFuente()">
+            <option value="youtube">URL de YouTube</option>
+            <option value="archivo">Archivo Subido</option>
+          </select>
+        </div>
+        <div id="seccion-youtube">
+          <div class="form-group">
+            <label>URL YouTube (embed)</label>
+            <input type="url" id="conf-videoYoutube-extra" placeholder="https://www.youtube.com/embed/...">
+            <small style="color:#888;font-size:0.82rem">Copie el enlace embed de YouTube.</small>
+          </div>
+        </div>
+        <div id="seccion-video-archivo" style="display:none">
+          <div class="form-group">
+            <label>Subir Video (MP4, WebM, máx. 100MB)</label>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
+              <input type="file" id="video-archivo" accept="video/mp4,video/webm" style="flex:1">
+              <button class="btn btn-primary" onclick="subirVideoPublicidad()">📤 Subir Video</button>
+            </div>
+            <p id="video-actual-url" style="color:#888;font-size:0.85rem;margin-top:0.5rem"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎨 Colores del Kiosco</h2>
+        <div class="row">
+          <div class="form-group">
+            <label>Color Primario Kiosco</label>
+            <div class="color-row">
+              <input type="color" id="conf-color_kiosco_primario-picker" value="#0d6efd">
+              <input type="text" id="conf-color_kiosco_primario" value="#0d6efd">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Color Secundario Kiosco</label>
+            <div class="color-row">
+              <input type="color" id="conf-color_kiosco_secundario-picker" value="#198754">
+              <input type="text" id="conf-color_kiosco_secundario" value="#198754">
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="guardarColoresKiosco()">💾 Guardar Colores Kiosco</button>
+      </div>
+
+      <div class="card">
+        <h2>🖥️ Personalización de Pantalla</h2>
+        <div class="form-group">
+          <label>Color de Fondo de Pantalla</label>
+          <div class="color-row">
+            <input type="color" id="conf-color_fondo_pantalla-picker" value="#0a0a1a">
+            <input type="text" id="conf-color_fondo_pantalla" value="#0a0a1a">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>Horario de Apertura</label>
+            <input type="time" id="conf-horario_apertura" value="07:00">
+          </div>
+          <div class="form-group">
+            <label>Horario de Cierre</label>
+            <input type="time" id="conf-horario_cierre" value="17:00">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="guardarConfigPantalla()">💾 Guardar Config Pantalla</button>
+      </div>
     </div>
 
     <!-- TAB: Gestión de Áreas -->
@@ -479,6 +550,9 @@
     syncColors('conf-colorPrimario-picker', 'conf-colorPrimario');
     syncColors('conf-colorSecundario-picker', 'conf-colorSecundario');
     syncColors('area-color-picker', 'area-color');
+    syncColors('conf-color_kiosco_primario-picker', 'conf-color_kiosco_primario');
+    syncColors('conf-color_kiosco_secundario-picker', 'conf-color_kiosco_secundario');
+    syncColors('conf-color_fondo_pantalla-picker', 'conf-color_fondo_pantalla');
 
     async function cargarConfig() {
       try {
@@ -495,6 +569,31 @@
         }
         if (config.videoYoutube) document.getElementById('conf-videoYoutube').value = config.videoYoutube;
         if (config.video_size) document.getElementById('conf-video_size').value = config.video_size;
+        // Nuevos campos de video
+        if (config.videoYoutube) document.getElementById('conf-videoYoutube-extra').value = config.videoYoutube;
+        if (config.video_fuente) {
+          document.getElementById('conf-video_fuente').value = config.video_fuente;
+          toggleVideoFuente();
+        }
+        if (config.video_url) {
+          document.getElementById('video-actual-url').textContent = 'Video actual: ' + config.video_url;
+        }
+        // Colores kiosco
+        if (config.color_kiosco_primario) {
+          document.getElementById('conf-color_kiosco_primario').value = config.color_kiosco_primario;
+          document.getElementById('conf-color_kiosco_primario-picker').value = config.color_kiosco_primario;
+        }
+        if (config.color_kiosco_secundario) {
+          document.getElementById('conf-color_kiosco_secundario').value = config.color_kiosco_secundario;
+          document.getElementById('conf-color_kiosco_secundario-picker').value = config.color_kiosco_secundario;
+        }
+        // Pantalla
+        if (config.color_fondo_pantalla) {
+          document.getElementById('conf-color_fondo_pantalla').value = config.color_fondo_pantalla;
+          document.getElementById('conf-color_fondo_pantalla-picker').value = config.color_fondo_pantalla;
+        }
+        if (config.horario_apertura) document.getElementById('conf-horario_apertura').value = config.horario_apertura;
+        if (config.horario_cierre) document.getElementById('conf-horario_cierre').value = config.horario_cierre;
         if (config.voz_tts) {
           // Esperar que las voces estén disponibles
           const sel = document.getElementById('conf-voz_tts');
@@ -540,6 +639,58 @@
         mostrarAlerta(result.mensaje || 'Configuración guardada.', 'success');
       } catch (e) { mostrarAlerta('Error al guardar configuración.', 'error'); }
     });
+
+    function toggleVideoFuente() {
+      const fuente = document.getElementById('conf-video_fuente').value;
+      document.getElementById('seccion-youtube').style.display = fuente === 'youtube' ? '' : 'none';
+      document.getElementById('seccion-video-archivo').style.display = fuente === 'archivo' ? '' : 'none';
+    }
+
+    async function subirVideoPublicidad() {
+      const fileInput = document.getElementById('video-archivo');
+      if (!fileInput.files || !fileInput.files[0]) { mostrarAlerta('Seleccione un archivo de video.', 'error'); return; }
+      const formData = new FormData();
+      formData.append('video', fileInput.files[0]);
+      try {
+        const res = await fetch('/api/config/video', { method: 'POST', body: formData });
+        const result = await res.json();
+        if (!res.ok) { mostrarAlerta(result.error || 'Error al subir video.', 'error'); return; }
+        mostrarAlerta('Video subido correctamente.', 'success');
+        document.getElementById('video-actual-url').textContent = 'Video actual: ' + result.video_url;
+        // Guardar fuente como 'archivo'
+        await fetch('/api/config', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ video_fuente: 'archivo' })
+        });
+        fileInput.value = '';
+      } catch (e) { mostrarAlerta('Error al subir video.', 'error'); }
+    }
+
+    async function guardarColoresKiosco() {
+      const datos = {
+        color_kiosco_primario: document.getElementById('conf-color_kiosco_primario').value,
+        color_kiosco_secundario: document.getElementById('conf-color_kiosco_secundario').value
+      };
+      try {
+        const res = await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+        const result = await res.json();
+        mostrarAlerta(result.mensaje || 'Colores del kiosco guardados.', 'success');
+      } catch (e) { mostrarAlerta('Error al guardar colores.', 'error'); }
+    }
+
+    async function guardarConfigPantalla() {
+      const datos = {
+        color_fondo_pantalla: document.getElementById('conf-color_fondo_pantalla').value,
+        horario_apertura: document.getElementById('conf-horario_apertura').value,
+        horario_cierre: document.getElementById('conf-horario_cierre').value
+      };
+      try {
+        const res = await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+        const result = await res.json();
+        mostrarAlerta(result.mensaje || 'Configuración de pantalla guardada.', 'success');
+      } catch (e) { mostrarAlerta('Error al guardar.', 'error'); }
+    }
 
     async function subirLogoSistema() {
       const fileInput = document.getElementById('logo-sistema-file');

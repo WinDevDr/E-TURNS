@@ -83,6 +83,7 @@ app.get('/home', viewLimiter, requireAuth, requireAdmin, (req, res) =>
 );
 
 app.get('/kiosco', viewLimiter, (req, res) => res.sendFile(path.join(__dirname, 'public', 'kiosco', 'index.html')));
+app.get('/kiosco/preferencial', viewLimiter, (req, res) => res.sendFile(path.join(__dirname, 'public', 'kiosco', 'index.html')));
 app.get('/panel', viewLimiter, requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'panel', 'index.html')));
 app.get('/pantalla', viewLimiter, (req, res) => res.sendFile(path.join(__dirname, 'public', 'pantalla', 'index.html')));
 app.get('/admin', viewLimiter, requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html')));

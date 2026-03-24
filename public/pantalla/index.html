@@ -126,11 +126,14 @@
 
   <div class="video-panel">
     <iframe id="video-frame" src="" allowfullscreen></iframe>
+    <video id="video-uploaded" src="" autoplay muted loop style="display:none;width:100%;border-radius:10px"></video>
     <p>Entretenimiento mientras espera</p>
   </div>
 
   <footer>
     <span id="mensaje-footer">Bienvenido al sistema de turnos electrónico</span>
+    &nbsp;|&nbsp;
+    <span id="horario-footer"></span>
   </footer>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -170,9 +173,18 @@
           `.turno-ventanilla { background: ${colorPrimario}; }`;
 
         // Video
-        if (config.videoYoutube) {
+        if (config.video_fuente === 'archivo' && config.video_url) {
+          const videoEl = document.getElementById('video-uploaded');
+          if (videoEl) {
+            videoEl.src = config.video_url;
+            videoEl.style.display = 'block';
+            videoEl.play().catch((err) => { console.warn('Autoplay bloqueado por el navegador:', err); });
+          }
+          document.getElementById('video-frame').style.display = 'none';
+        } else if (config.videoYoutube) {
           const videoFrame = document.getElementById('video-frame');
           videoFrame.src = config.videoYoutube + '?autoplay=1&mute=1&loop=1';
+          videoFrame.style.display = 'block';
 
           // Tamaño de video
           const sizeMap = { 'pequeño': '25%', 'mediano': '40%', 'grande': '60%', 'completo': '100%' };
@@ -191,6 +203,18 @@
               document.body.style.gridTemplateColumns = `1fr ${videoSize}`;
             }
           }
+        }
+
+        if (config.color_fondo_pantalla) {
+          document.body.style.background = config.color_fondo_pantalla;
+        }
+
+        // Horario
+        if (config.horario_apertura || config.horario_cierre) {
+          const apertura = config.horario_apertura || '07:00';
+          const cierre = config.horario_cierre || '17:00';
+          const horarioEl = document.getElementById('horario-footer');
+          if (horarioEl) horarioEl.textContent = `Horario: ${apertura} - ${cierre}`;
         }
 
         if (config.mensaje) document.getElementById('mensaje-footer').textContent = config.mensaje;

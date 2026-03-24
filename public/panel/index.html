@@ -14,18 +14,23 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
     }
-    header h1 { font-size: 1.5rem; font-weight: 900; }
-    .ventanilla-select { display: flex; align-items: center; gap: 0.75rem; }
-    .ventanilla-select label { font-weight: 600; }
+    .header-left { display: flex; flex-direction: column; }
+    header h1 { font-size: 1.4rem; font-weight: 900; }
+    #operador-nombre { font-size: 0.9rem; opacity: 0.85; }
+    .header-right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .ventanilla-select { display: flex; align-items: center; gap: 0.5rem; }
+    .ventanilla-select label { font-weight: 600; font-size: 0.9rem; }
     select {
       padding: 0.4rem 0.75rem;
       border-radius: 8px;
       border: none;
-      font-size: 1rem;
+      font-size: 0.95rem;
       background: rgba(255,255,255,0.9);
     }
-    .container { padding: 2rem; }
+    .container { padding: 1.5rem; }
     .stats-bar {
       display: flex;
       gap: 1rem;
@@ -35,76 +40,92 @@
     .stat-card {
       background: #fff;
       border-radius: 10px;
-      padding: 1rem 1.5rem;
+      padding: 0.85rem 1.2rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       flex: 1;
-      min-width: 140px;
+      min-width: 120px;
       text-align: center;
     }
-    .stat-card .num { font-size: 2rem; font-weight: 900; color: #0d6efd; }
-    .stat-card .lbl { font-size: 0.85rem; color: #666; margin-top: 0.25rem; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .stat-card .num { font-size: 1.8rem; font-weight: 900; color: #0d6efd; }
+    .stat-card .lbl { font-size: 0.78rem; color: #666; margin-top: 0.2rem; }
+    /* Kanban */
+    .kanban-board {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      min-height: 70vh;
+      padding-bottom: 1rem;
+    }
+    .kanban-col {
+      flex: 0 0 280px;
       background: #fff;
       border-radius: 12px;
-      overflow: hidden;
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
     }
-    thead { background: #0d6efd; color: #fff; }
-    th, td { padding: 0.9rem 1rem; text-align: left; }
-    tbody tr:nth-child(even) { background: #f8f9fa; }
-    tbody tr:hover { background: #e8f4fd; }
+    .col-header {
+      padding: 1rem;
+      color: #fff;
+      background: #6c757d;
+      border-radius: 12px 12px 0 0;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .col-body {
+      padding: 0.75rem;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      flex: 1;
+    }
+    .turn-card {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 1rem;
+      border-left: 4px solid #6c757d;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .turn-card.preferencial { border-left-color: gold; }
+    .turn-num { font-size: 1.6rem; font-weight: 900; color: #333; }
+    .turn-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.35rem 0; }
     .badge {
-      padding: 0.25rem 0.75rem;
+      padding: 0.2rem 0.6rem;
       border-radius: 20px;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 700;
     }
-    .badge-esperando { background: #fff3cd; color: #856404; }
-    .badge-llamado { background: #cfe2ff; color: #084298; }
-    .badge-atendido { background: #d1e7dd; color: #0a3622; }
-    .acciones { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-    .btn { padding: 0.4rem 0.9rem; border: none; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 600; transition: opacity 0.15s; }
+    .badge-tipo { background: #e9ecef; color: #495057; }
+    .badge-pref { background: #fff3cd; color: #856404; }
+    .turn-time { font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; }
+    .turn-actions { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+    .btn { padding: 0.4rem 0.75rem; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; transition: opacity 0.15s; width: 100%; text-align: left; }
     .btn:hover { opacity: 0.85; }
     .btn-llamar { background: #0d6efd; color: #fff; }
-    .btn-repetir { background: #fd7e14; color: #fff; }
+    .btn-pasar { background: #6f42c1; color: #fff; }
+    .btn-solo-fact { background: #198754; color: #fff; }
     .btn-atender { background: #198754; color: #fff; }
-    .btn-transferir { background: #6c757d; color: #fff; }
     .btn-cancelar { background: #dc3545; color: #fff; }
-    .empty-msg { text-align: center; color: #888; padding: 2rem; font-style: italic; }
-    .turno-actual {
-      background: #0d6efd;
-      color: #fff;
-      border-radius: 12px;
-      padding: 1.2rem 2rem;
-      margin-bottom: 1.5rem;
-      font-size: 1.1rem;
-      display: none;
-    }
-    .turno-actual .num { font-size: 2.5rem; font-weight: 900; }
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: #fff; border-radius: 14px; padding: 2rem; width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-    .modal h3 { font-size: 1.1rem; color: #0d6efd; margin-bottom: 1.25rem; }
-    .modal select { width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid #dee2e6; border-radius: 8px; font-size: 1rem; background: #fafafa; margin-bottom: 1rem; }
-    .modal-actions { display: flex; gap: 0.75rem; margin-top: 1rem; justify-content: flex-end; }
-    .btn-outline { background: #fff; color: #555; border: 1.5px solid #dee2e6; padding: 0.5rem 1.1rem; border-radius: 8px; font-size: 0.95rem; cursor: pointer; font-weight: 600; }
-    .btn-outline:hover { background: #f0f4f8; }
+    .empty-col { text-align: center; color: #bbb; padding: 2rem 1rem; font-style: italic; font-size: 0.9rem; }
+    .btn-logout { background: rgba(220,53,69,0.85); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 0.9rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
   </style>
 </head>
 <body>
   <header>
-    <h1>🖥️ Panel Operador — E-TURNS</h1>
-    <div class="ventanilla-select">
-      <label>Ventanilla:</label>
-      <select id="ventanilla-sel">
-        <option value="Ventanilla 1">Ventanilla 1</option>
-        <option value="Ventanilla 2">Ventanilla 2</option>
-        <option value="Ventanilla 3">Ventanilla 3</option>
-      </select>
-      <form action="/auth/logout" method="POST" style="display:inline;margin-left:0.5rem">
-        <button type="submit" style="background:rgba(220,53,69,0.85);color:#fff;border:none;border-radius:8px;padding:0.4rem 0.9rem;cursor:pointer;font-size:0.9rem;font-weight:600">🚪 Salir</button>
+    <div class="header-left">
+      <h1>🖥️ Panel Operador — E-TURNS</h1>
+      <span id="operador-nombre"></span>
+    </div>
+    <div class="header-right">
+      <div class="ventanilla-select">
+        <label>Ventanilla:</label>
+        <select id="ventanilla-sel">
+          <option value="Ventanilla 1">Ventanilla 1</option>
+        </select>
+      </div>
+      <form action="/auth/logout" method="POST" style="display:inline">
+        <button type="submit" class="btn-logout">🚪 Salir</button>
       </form>
     </div>
   </header>
@@ -112,50 +133,39 @@
   <div class="container">
     <div class="stats-bar">
       <div class="stat-card">
-        <div class="num" id="stat-espera">0</div>
-        <div class="lbl">En Espera</div>
+        <div class="num" id="stat-espera-sala">0</div>
+        <div class="lbl">🪑 Sala de Espera</div>
       </div>
       <div class="stat-card">
-        <div class="num" id="stat-llamados">0</div>
-        <div class="lbl">Llamados</div>
+        <div class="num" id="stat-facturacion">0</div>
+        <div class="lbl">💰 En Facturación</div>
       </div>
       <div class="stat-card">
-        <div class="num" id="stat-atendidos">0</div>
-        <div class="lbl">Atendidos Hoy</div>
+        <div class="num" id="stat-espera-muestra">0</div>
+        <div class="lbl">🔬 Espera Muestra</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-toma-muestra">0</div>
+        <div class="lbl">🧪 En Toma Muestra</div>
       </div>
     </div>
 
-    <div class="turno-actual" id="turno-actual-card">
-      <span>Turno en llamada: </span><span class="num" id="turno-actual-num"></span>
-      <span id="turno-actual-area" style="margin-left:1rem;font-size:1.1rem"></span>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Número</th>
-          <th>Área</th>
-          <th>Hora</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="turnos-tbody">
-        <tr><td colspan="6" class="empty-msg">Cargando turnos...</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Modal: Transferir Turno -->
-  <div class="modal-overlay" id="modal-transferir">
-    <div class="modal">
-      <h3>↔️ Transferir Turno</h3>
-      <p style="color:#555;margin-bottom:1rem">Seleccione el área destino:</p>
-      <select id="transferir-area-sel"></select>
-      <div class="modal-actions">
-        <button class="btn-outline" onclick="cerrarModalTransferir()">Cancelar</button>
-        <button class="btn btn-primary" onclick="confirmarTransferir()">Transferir</button>
+    <div class="kanban-board">
+      <div class="kanban-col" id="col-espera-sala">
+        <div class="col-header">🪑 Sala de Espera</div>
+        <div class="col-body" id="cards-espera-sala"></div>
+      </div>
+      <div class="kanban-col" id="col-facturacion">
+        <div class="col-header" style="background:#0d6efd">💰 En Facturación</div>
+        <div class="col-body" id="cards-facturacion"></div>
+      </div>
+      <div class="kanban-col" id="col-espera-muestra">
+        <div class="col-header" style="background:#6f42c1">🔬 Espera Toma de Muestra</div>
+        <div class="col-body" id="cards-espera-muestra"></div>
+      </div>
+      <div class="kanban-col" id="col-toma-muestra">
+        <div class="col-header" style="background:#198754">🧪 Toma de Muestra</div>
+        <div class="col-body" id="cards-toma-muestra"></div>
       </div>
     </div>
   </div>
@@ -164,53 +174,6 @@
   <script>
     const socket = io();
     let turnos = [];
-    let turnoLlamadoActual = null;
-    let turnoATransferir = null;
-    let areasDisponibles = [];
-
-    // Cargar áreas disponibles
-    async function cargarAreas() {
-      try {
-        const res = await fetch('/api/areas');
-        areasDisponibles = await res.json();
-      } catch (e) { console.error('Error al cargar áreas:', e); }
-    }
-    cargarAreas();
-
-    // Cargar ventanillas desde la API
-    async function cargarVentanillas() {
-      try {
-        const res = await fetch('/api/ventanillas');
-        const ventanillas = await res.json();
-        const sel = document.getElementById('ventanilla-sel');
-        if (ventanillas.length > 0) {
-          sel.innerHTML = ventanillas.map(v => `<option value="${v.nombre}">${v.nombre}</option>`).join('');
-        }
-      } catch (e) { console.error('Error al cargar ventanillas:', e); }
-    }
-    cargarVentanillas();
-
-    async function cargarTurnos() {
-      try {
-        const res = await fetch('/api/turnos');
-        const data = await res.json();
-        turnos = data.filter(t => t.estado !== 'atendido');
-        renderTurnos();
-        actualizarStats();
-      } catch (e) {
-        console.error('Error al cargar turnos:', e);
-      }
-    }
-
-    async function actualizarStats() {
-      try {
-        const res = await fetch('/api/stats');
-        const stats = await res.json();
-        document.getElementById('stat-atendidos').textContent = stats.atendidos || 0;
-      } catch (e) {}
-      document.getElementById('stat-espera').textContent = turnos.filter(t => t.estado === 'esperando').length;
-      document.getElementById('stat-llamados').textContent = turnos.filter(t => t.estado === 'llamado').length;
-    }
 
     function escHtml(str) {
       return String(str || '')
@@ -221,46 +184,124 @@
         .replace(/'/g, '&#39;');
     }
 
-    function renderTurnos() {
-      const tbody = document.getElementById('turnos-tbody');
-      const enEspera = turnos.filter(t => t.estado === 'esperando' || t.estado === 'llamado');
+    function tiempoEspera(fechaHora) {
+      const mins = Math.floor((Date.now() - new Date(fechaHora)) / 60000);
+      if (mins < 1) return 'Recién llegado';
+      if (mins === 1) return '1 min esperando';
+      return `${mins} min esperando`;
+    }
 
-      if (enEspera.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No hay turnos en espera.</td></tr>';
-        return;
+    function crearCard(t) {
+      const etapa = t.etapa || 'espera_sala';
+      let acciones = '';
+
+      if (etapa === 'espera_sala') {
+        acciones = `
+          <button class="btn btn-llamar" onclick="llamarFact(${t.id})">📣 Llamar a Facturación</button>
+          <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+        `;
+      } else if (etapa === 'facturacion') {
+        acciones = `
+          <button class="btn btn-pasar" onclick="pasarMuestra(${t.id})">🔬 Pasar a Toma de Muestra</button>
+          <button class="btn btn-solo-fact" onclick="atenderFact(${t.id})">✅ Solo Facturación</button>
+          <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+        `;
+      } else if (etapa === 'espera_muestra') {
+        acciones = `
+          <button class="btn btn-llamar" onclick="llamarMuestra(${t.id})">📣 Llamar a Toma de Muestra</button>
+          <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+        `;
+      } else if (etapa === 'toma_muestra') {
+        acciones = `
+          <button class="btn btn-atender" onclick="atenderMuestra(${t.id})">✅ Atendido</button>
+          <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+        `;
       }
 
-      tbody.innerHTML = enEspera.map((t, i) => {
-        const transferBtn = t.estado === 'esperando'
-          ? `<button class="btn btn-transferir" data-tid="${t.id}" data-tarea="${escHtml(t.area)}" onclick="abrirTransferir(this)">↔️ Transferir</button>`
-          : '';
-        return `
-        <tr>
-          <td>${i + 1}</td>
-          <td><strong>${escHtml(t.numero)}</strong></td>
-          <td>${escHtml(t.area)}</td>
-          <td>${new Date(t.fecha_hora).toLocaleTimeString('es-ES')}</td>
-          <td><span class="badge badge-${escHtml(t.estado)}">${escHtml(t.estado)}</span></td>
-          <td class="acciones">
-            <button class="btn btn-llamar" data-tid="${t.id}" data-tnumero="${escHtml(t.numero)}" data-tarea="${escHtml(t.area)}" onclick="llamarTurnoBtn(this)">📣 Llamar</button>
-            <button class="btn btn-repetir" data-tid="${t.id}" onclick="repetirTurno(this.dataset.tid)">🔁 Repetir</button>
-            <button class="btn btn-atender" data-tid="${t.id}" onclick="atenderTurno(this.dataset.tid)">✅ Atender</button>
-            ${transferBtn}
-            <button class="btn btn-cancelar" data-tid="${t.id}" onclick="cancelarTurno(this.dataset.tid)">❌ Cancelar</button>
-          </td>
-        </tr>`;
-      }).join('');
+      const prefBadge = t.preferencial ? '<span class="badge badge-pref">⭐ Preferencial</span>' : '';
+      const tipoBadge = t.tipo_paciente ? `<span class="badge badge-tipo">${escHtml(t.tipo_paciente)}</span>` : '';
+
+      return `
+        <div class="turn-card${t.preferencial ? ' preferencial' : ''}" id="card-${t.id}">
+          <div class="turn-num">${escHtml(t.numero)}</div>
+          <div class="turn-badges">${prefBadge}${tipoBadge}</div>
+          <div class="turn-time">${tiempoEspera(t.fecha_hora)}</div>
+          <div class="turn-actions">${acciones}</div>
+        </div>
+      `;
     }
 
-    async function llamarTurnoBtn(btn) {
-      const id = parseInt(btn.dataset.tid, 10);
-      const numero = btn.dataset.tnumero;
-      const area = btn.dataset.tarea;
-      await llamarTurno(id, numero, area);
+    function renderKanban() {
+      const cols = {
+        'espera_sala': document.getElementById('cards-espera-sala'),
+        'facturacion': document.getElementById('cards-facturacion'),
+        'espera_muestra': document.getElementById('cards-espera-muestra'),
+        'toma_muestra': document.getElementById('cards-toma-muestra')
+      };
+
+      Object.values(cols).forEach(c => { c.innerHTML = ''; });
+
+      const activos = turnos.filter(t => t.estado !== 'atendido' && t.estado !== 'cancelado');
+
+      activos.forEach(t => {
+        const etapa = t.etapa || 'espera_sala';
+        const col = cols[etapa];
+        if (col) col.innerHTML += crearCard(t);
+      });
+
+      Object.entries(cols).forEach(([etapa, col]) => {
+        if (col.children.length === 0) {
+          col.innerHTML = '<div class="empty-col">Sin turnos</div>';
+        }
+      });
+
+      actualizarStats(activos);
     }
 
-    async function llamarTurno(id, numero, area) {
-      const ventanilla = document.getElementById('ventanilla-sel').value;
+    function actualizarStats(activos) {
+      if (!activos) activos = turnos.filter(t => t.estado !== 'atendido' && t.estado !== 'cancelado');
+      document.getElementById('stat-espera-sala').textContent = activos.filter(t => (t.etapa || 'espera_sala') === 'espera_sala').length;
+      document.getElementById('stat-facturacion').textContent = activos.filter(t => t.etapa === 'facturacion').length;
+      document.getElementById('stat-espera-muestra').textContent = activos.filter(t => t.etapa === 'espera_muestra').length;
+      document.getElementById('stat-toma-muestra').textContent = activos.filter(t => t.etapa === 'toma_muestra').length;
+    }
+
+    async function cargarTurnos() {
+      try {
+        const res = await fetch('/api/turnos');
+        turnos = await res.json();
+        renderKanban();
+      } catch (e) { console.error('Error al cargar turnos:', e); }
+    }
+
+    async function cargarVentanillas() {
+      try {
+        const res = await fetch('/api/ventanillas');
+        const ventanillas = await res.json();
+        const sel = document.getElementById('ventanilla-sel');
+        if (ventanillas.length > 0) {
+          sel.innerHTML = ventanillas.map(v => `<option value="${escHtml(v.nombre)}">${escHtml(v.nombre)}</option>`).join('');
+        }
+      } catch (e) {}
+    }
+
+    async function cargarOperador() {
+      try {
+        const res = await fetch('/auth/me');
+        if (res.ok) {
+          const u = await res.json();
+          const el = document.getElementById('operador-nombre');
+          if (el) el.textContent = u.nombre || u.username || '';
+        }
+      } catch (e) {}
+    }
+
+    function getVentanilla() {
+      return document.getElementById('ventanilla-sel').value;
+    }
+
+    async function llamarFact(id) {
+      const ventanilla = getVentanilla();
       try {
         const res = await fetch(`/api/turnos/${id}/llamar`, {
           method: 'PUT',
@@ -268,120 +309,87 @@
           body: JSON.stringify({ ventanilla })
         });
         const turno = await res.json();
-        turnoLlamadoActual = turno;
         socket.emit('call_turn', turno);
-
-        // Mostrar turno actual
-        document.getElementById('turno-actual-num').textContent = turno.numero;
-        document.getElementById('turno-actual-area').textContent = `— ${turno.area} · ${ventanilla}`;
-        document.getElementById('turno-actual-card').style.display = 'block';
-
-        // Actualizar local
         const idx = turnos.findIndex(t => t.id === id);
-        if (idx !== -1) { turnos[idx].estado = 'llamado'; turnos[idx].ventanilla = ventanilla; }
-        renderTurnos();
-        actualizarStats();
+        if (idx !== -1) turnos[idx] = turno;
+        renderKanban();
       } catch (e) { alert('Error al llamar turno.'); }
     }
 
-    function repetirTurno(id) {
-      const numId = parseInt(id, 10);
-      const turno = turnos.find(t => t.id === numId);
-      if (turno) socket.emit('repeat_turn', turno);
+    async function llamarMuestra(id) {
+      const ventanilla = getVentanilla();
+      try {
+        const res = await fetch(`/api/turnos/${id}/llamar`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ventanilla })
+        });
+        const turno = await res.json();
+        socket.emit('call_turn', turno);
+        const idx = turnos.findIndex(t => t.id === id);
+        if (idx !== -1) turnos[idx] = turno;
+        renderKanban();
+      } catch (e) { alert('Error al llamar turno.'); }
     }
 
-    async function atenderTurno(id) {
-      const numId = parseInt(id, 10);
+    async function pasarMuestra(id) {
       try {
-        await fetch(`/api/turnos/${numId}/atender`, { method: 'PUT' });
-        turnos = turnos.filter(t => t.id !== numId);
-        if (turnoLlamadoActual && turnoLlamadoActual.id === numId) {
-          document.getElementById('turno-actual-card').style.display = 'none';
-          turnoLlamadoActual = null;
-        }
-        renderTurnos();
-        actualizarStats();
+        const res = await fetch(`/api/turnos/${id}/pasar-muestra`, { method: 'PUT' });
+        const turno = await res.json();
+        const idx = turnos.findIndex(t => t.id === id);
+        if (idx !== -1) turnos[idx] = turno;
+        renderKanban();
+      } catch (e) { alert('Error al pasar a muestra.'); }
+    }
+
+    async function atenderFact(id) {
+      try {
+        await fetch(`/api/turnos/${id}/atender`, { method: 'PUT' });
+        turnos = turnos.filter(t => t.id !== id);
+        renderKanban();
+        socket.emit('update_stats');
+      } catch (e) { alert('Error al atender turno.'); }
+    }
+
+    async function atenderMuestra(id) {
+      try {
+        await fetch(`/api/turnos/${id}/atender`, { method: 'PUT' });
+        turnos = turnos.filter(t => t.id !== id);
+        renderKanban();
         socket.emit('update_stats');
       } catch (e) { alert('Error al atender turno.'); }
     }
 
     async function cancelarTurno(id) {
-      const numId = parseInt(id, 10);
       if (!confirm('¿Está seguro de cancelar este turno?')) return;
       try {
-        const res = await fetch(`/api/turnos/${numId}/cancelar`, { method: 'PUT' });
+        const res = await fetch(`/api/turnos/${id}/cancelar`, { method: 'PUT' });
         if (!res.ok) { const e = await res.json(); alert('Error: ' + e.error); return; }
-        turnos = turnos.filter(t => t.id !== numId);
-        if (turnoLlamadoActual && turnoLlamadoActual.id === numId) {
-          document.getElementById('turno-actual-card').style.display = 'none';
-          turnoLlamadoActual = null;
-        }
-        socket.emit('cancel_turn', { id: numId });
-        renderTurnos();
-        actualizarStats();
+        turnos = turnos.filter(t => t.id !== id);
+        socket.emit('cancel_turn', { id });
+        renderKanban();
       } catch (e) { alert('Error al cancelar turno.'); }
     }
 
-    function abrirTransferir(btn) {
-      const id = parseInt(btn.dataset.tid, 10);
-      const areaActual = btn.dataset.tarea;
-      turnoATransferir = id;
-      const sel = document.getElementById('transferir-area-sel');
-      sel.innerHTML = areasDisponibles
-        .filter(a => a.nombre !== areaActual)
-        .map(a => `<option value="${a.nombre}">${a.nombre}</option>`)
-        .join('');
-      document.getElementById('modal-transferir').classList.add('open');
-    }
-
-    function cerrarModalTransferir() {
-      document.getElementById('modal-transferir').classList.remove('open');
-      turnoATransferir = null;
-    }
-
-    async function confirmarTransferir() {
-      const area = document.getElementById('transferir-area-sel').value;
-      if (!area || !turnoATransferir) return;
-      try {
-        const res = await fetch(`/api/turnos/${turnoATransferir}/transferir`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ area })
-        });
-        if (!res.ok) { const e = await res.json(); alert('Error: ' + e.error); return; }
-        const turnoActualizado = await res.json();
-        const idx = turnos.findIndex(t => t.id === turnoATransferir);
-        if (idx !== -1) { turnos[idx] = turnoActualizado; }
-        socket.emit('transfer_turn', turnoActualizado);
-        cerrarModalTransferir();
-        renderTurnos();
-        actualizarStats();
-      } catch (e) { alert('Error al transferir turno.'); }
-    }
-
-    // Socket.IO eventos
+    // Socket eventos
     socket.on('turn_added', (turno) => {
       if (!turnos.find(t => t.id === turno.id)) turnos.push(turno);
-      renderTurnos();
-      actualizarStats();
+      renderKanban();
     });
 
     socket.on('turn_cancelled', (data) => {
       turnos = turnos.filter(t => t.id !== data.id);
-      renderTurnos();
-      actualizarStats();
+      renderKanban();
     });
 
-    socket.on('turn_transferred', (turno) => {
-      const idx = turnos.findIndex(t => t.id === turno.id);
-      if (idx !== -1) { turnos[idx] = turno; } else { turnos.push(turno); }
-      renderTurnos();
-      actualizarStats();
-    });
+    socket.on('stats_updated', cargarTurnos);
 
-    socket.on('stats_updated', actualizarStats);
+    // Actualizar tiempos cada minuto
+    setInterval(() => renderKanban(), 60000);
 
     // Inicializar
+    cargarVentanillas();
+    cargarOperador();
     cargarTurnos();
   </script>
 </body>
