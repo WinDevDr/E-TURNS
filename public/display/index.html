@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-TURNS - Pantalla de Visualización</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body { overflow: hidden; }
+    .display-container { transition: background-color 0.5s; }
+    .display-header { transition: background-color 0.5s; }
+    .current-turns-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .current-turn-card {
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .current-turn-card:first-child {
+      animation: turnPulse 2s ease-in-out infinite;
+    }
+    .current-turn-card .code {
+      font-size: 4rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .current-turn-card:not(:first-child) .code {
+      font-size: 2.5rem;
+    }
+    .current-turn-card .area {
+      font-size: 1.2rem;
+      margin-top: 0.5rem;
+      opacity: 0.9;
+    }
+    .current-turn-card .operator {
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+      opacity: 0.7;
+    }
+    .display-section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+    }
+    .waiting-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .waiting-chip {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 1.1rem;
+      background: rgba(255,255,255,0.15);
+    }
+    .media-section {
+      padding: 1rem;
+    }
+    .media-section video,
+    .media-section iframe {
+      width: 100%;
+      border-radius: var(--radius);
+      max-height: 350px;
+    }
+    .no-turns-message {
+      font-size: 1.5rem;
+      opacity: 0.5;
+      text-align: center;
+      padding: 3rem;
+    }
+    .marquee {
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 0.5rem 0;
+    }
+    .marquee span {
+      display: inline-block;
+      animation: marquee 20s linear infinite;
+    }
+    @keyframes marquee {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+  </style>
+</head>
+<body>
+  <div class="display-container" id="displayContainer">
+    <div class="display-header" id="displayHeader">
+      <h1 id="branchName">E-TURNS</h1>
+      <div class="clock" id="clock"></div>
+    </div>
+
+    <div class="display-current" id="currentSection">
+      <div class="display-section-title">📢 Turnos Actuales</div>
+      <div class="current-turns-list" id="currentTurnsList">
+        <div class="no-turns-message">Esperando turnos...</div>
+      </div>
+    </div>
+
+    <div class="media-section" id="mediaSection">
+      <div id="mediaContent"></div>
+    </div>
+
+    <div class="display-waiting" id="waitingSection">
+      <div class="display-section-title">⏳ En Espera</div>
+      <div class="waiting-grid" id="waitingList"></div>
+    </div>
+
+    <div class="display-footer" id="displayFooter">
+      <div class="schedule" id="scheduleText"></div>
+      <div class="marquee">
+        <span id="messageText"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification sound (bell) -->
+  <audio id="bellSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" type="audio/wav">
+  </audio>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let config = {};
+    let lastCalledCode = null;
+
+    async function init() {
+      config = await fetch('/api/config').then(r => r.json());
+      applyConfig();
+      loadDisplay();
+      startClock();
+    }
+
+    function applyConfig() {
+      const container = document.getElementById('displayContainer');
+      const header = document.getElementById('displayHeader');
+      const footer = document.getElementById('displayFooter');
+
+      container.style.backgroundColor = config.display_bg_color || '#1a1a2e';
+      container.style.color = config.display_text_color || '#ffffff';
+      header.style.backgroundColor = config.display_header_color || '#16213e';
+      footer.style.backgroundColor = config.display_header_color || '#16213e';
+
+      document.getElementById('branchName').textContent = config.branch_name || 'E-TURNS';
+      document.getElementById('scheduleText').textContent = config.display_schedule || '';
+      document.getElementById('messageText').textContent = config.display_message || '';
+
+      // Media
+      updateMedia();
+    }
+
+    function updateMedia() {
+      const mediaContent = document.getElementById('mediaContent');
+      const youtubeEnabled = config.display_youtube_enabled === 'true';
+      const videoEnabled = config.display_video_enabled === 'true';
+
+      if (youtubeEnabled && config.display_youtube_url) {
+        let youtubeUrl = config.display_youtube_url;
+        // Convert regular youtube URL to embed
+        if (youtubeUrl.includes('watch?v=')) {
+          const videoId = youtubeUrl.split('v=')[1]?.split('&')[0];
+          youtubeUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
+        } else if (youtubeUrl.includes('youtu.be/')) {
+          const videoId = youtubeUrl.split('youtu.be/')[1]?.split('?')[0];
+          youtubeUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
+        }
+        mediaContent.innerHTML = `<iframe src="${encodeURI(youtubeUrl)}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="width:100%;height:300px;border-radius:12px;"></iframe>`;
+      } else if (videoEnabled && config.display_video_url) {
+        mediaContent.innerHTML = `<video autoplay loop muted playsinline style="width:100%;border-radius:12px;max-height:300px;"><source src="${encodeURI(config.display_video_url)}" type="video/mp4"></video>`;
+      } else {
+        mediaContent.innerHTML = '';
+      }
+    }
+
+    async function loadDisplay() {
+      const data = await fetch('/api/display').then(r => r.json());
+      renderDisplay(data);
+    }
+
+    function renderDisplay(data) {
+      // Current turns
+      const list = document.getElementById('currentTurnsList');
+      if (data.currentTurns && data.currentTurns.length > 0) {
+        list.innerHTML = '';
+        for (const turn of data.currentTurns) {
+          const card = document.createElement('div');
+          card.className = 'current-turn-card';
+          card.style.backgroundColor = config.display_highlight_color || '#e94560';
+          card.innerHTML = `
+            <div class="code">${turn.code}</div>
+            <div class="area">→ ${turn.area_name}</div>
+            ${turn.operator_name ? `<div class="operator">Atendido por: ${turn.operator_name}</div>` : ''}
+          `;
+          list.appendChild(card);
+        }
+      } else {
+        list.innerHTML = '<div class="no-turns-message">Esperando turnos...</div>';
+      }
+
+      // Waiting
+      const waitingDiv = document.getElementById('waitingList');
+      if (data.waitingTurns && data.waitingTurns.length > 0) {
+        waitingDiv.innerHTML = '';
+        for (const turn of data.waitingTurns) {
+          const chip = document.createElement('div');
+          chip.className = 'waiting-chip';
+          chip.textContent = turn.code;
+          waitingDiv.appendChild(chip);
+        }
+      } else {
+        waitingDiv.innerHTML = '<span style="opacity:0.5;">No hay turnos en espera</span>';
+      }
+    }
+
+    function startClock() {
+      function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').textContent = now.toLocaleTimeString('es', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      }
+      updateClock();
+      setInterval(updateClock, 1000);
+    }
+
+    function playBell() {
+      try {
+        // Create a simple bell-like tone using Web Audio API
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 830;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 1);
+
+        // Second tone
+        setTimeout(() => {
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.frequency.value = 1050;
+          osc2.type = 'sine';
+          gain2.gain.setValueAtTime(0.5, ctx.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+          osc2.start(ctx.currentTime);
+          osc2.stop(ctx.currentTime + 1);
+        }, 200);
+      } catch(e) {}
+    }
+
+    // Real-time updates
+    socket.on('display-update', (data) => {
+      renderDisplay(data);
+    });
+
+    socket.on('turn-called', (turn) => {
+      if (turn.code !== lastCalledCode) {
+        lastCalledCode = turn.code;
+        playBell();
+      }
+    });
+
+    socket.on('config-updated', (newConfig) => {
+      config = newConfig;
+      applyConfig();
+    });
+
+    init();
+  </script>
+</body>
+</html>

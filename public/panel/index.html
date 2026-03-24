@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-TURNS - Panel de Operador</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .operator-select-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--light);
+    }
+    .operator-select-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 3rem;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    }
+    .operator-select-card h2 {
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+    }
+    .operator-select-card select {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid #dee2e6;
+      border-radius: var(--radius-sm);
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+    .operator-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.15);
+      border-radius: var(--radius-sm);
+    }
+    .operator-info .name {
+      font-weight: 600;
+    }
+    .operator-info .area-badge {
+      padding: 0.2rem 0.5rem;
+      background: rgba(255,255,255,0.25);
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+    .sound-alert {
+      display: none;
+    }
+    .notification-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem 2rem;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      z-index: 2000;
+      transform: translateY(-100%);
+      transition: transform 0.3s ease;
+    }
+    .notification-bar.show {
+      transform: translateY(0);
+    }
+    .notification-bar.success { background: var(--success); color: white; }
+    .notification-bar.info { background: var(--info); color: var(--dark); }
+  </style>
+</head>
+<body>
+  <!-- Operator Selection -->
+  <div class="operator-select-container" id="operatorSelectView">
+    <div class="operator-select-card">
+      <h2>🏢 Panel de Operador</h2>
+      <p class="text-muted mb-2">Selecciona tu usuario para continuar</p>
+      <select id="operatorSelect">
+        <option value="">-- Seleccionar Operador --</option>
+      </select>
+      <button class="btn btn-primary btn-lg btn-block" onclick="loginOperator()">Ingresar</button>
+    </div>
+  </div>
+
+  <!-- Main Panel -->
+  <div id="mainPanelView" style="display:none;">
+    <nav class="navbar">
+      <h1>🏢 E-TURNS Panel</h1>
+      <div class="operator-info">
+        <span class="name" id="operatorName"></span>
+        <span class="area-badge" id="operatorArea"></span>
+      </div>
+      <div class="navbar-links">
+        <a href="/kiosk/">Kiosco</a>
+        <a href="/panel/" class="active">Panel</a>
+        <a href="/display/">Pantalla</a>
+        <a href="/stats/">Estadísticas</a>
+        <a href="/config/">Configuración</a>
+      </div>
+    </nav>
+
+    <div class="kanban-container" id="kanbanBoard"></div>
+  </div>
+
+  <!-- Notification -->
+  <div class="notification-bar" id="notifBar"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let currentOperator = null;
+    let areas = [];
+
+    async function init() {
+      const [opsRes, areasRes] = await Promise.all([
+        fetch('/api/operators').then(r => r.json()),
+        fetch('/api/areas').then(r => r.json())
+      ]);
+      areas = areasRes;
+
+      const select = document.getElementById('operatorSelect');
+      for (const op of opsRes) {
+        const opt = document.createElement('option');
+        opt.value = JSON.stringify(op);
+        opt.textContent = `${op.name} (${op.area_name || 'Sin área'})`;
+        select.appendChild(opt);
+      }
+    }
+
+    function loginOperator() {
+      const select = document.getElementById('operatorSelect');
+      if (!select.value) return alert('Selecciona un operador');
+      currentOperator = JSON.parse(select.value);
+      document.getElementById('operatorName').textContent = currentOperator.name;
+      document.getElementById('operatorArea').textContent = currentOperator.area_name || 'Sin área';
+      document.getElementById('operatorSelectView').style.display = 'none';
+      document.getElementById('mainPanelView').style.display = 'block';
+      loadKanban();
+    }
+
+    async function loadKanban() {
+      const data = await fetch('/api/kanban').then(r => r.json());
+      renderKanban(data);
+    }
+
+    function renderKanban(data) {
+      const board = document.getElementById('kanbanBoard');
+      board.innerHTML = '';
+
+      const { areas: areasList, kanban } = data;
+
+      // Column 1: Espera en Sala (global waiting)
+      const waitingCol = createColumn('Espera en Sala', '#ffc107', kanban.waiting || [], 'waiting');
+      board.appendChild(waitingCol);
+
+      // For each area, create columns
+      for (const area of areasList) {
+        // Area attending column
+        const attendCol = createColumn(
+          area.name,
+          area.name === 'Facturación' ? '#0d6efd' : '#198754',
+          kanban['area_' + area.id + '_attending'] || [],
+          'attending',
+          area
+        );
+        board.appendChild(attendCol);
+
+        // Area waiting column (waiting for this area)
+        const areaIdx = areasList.indexOf(area);
+        if (areaIdx < areasList.length - 1) {
+          const nextArea = areasList[areaIdx + 1];
+          const waitAreaCol = createColumn(
+            `Sala de Espera - ${nextArea.name}`,
+            '#6f42c1',
+            kanban['area_' + nextArea.id + '_waiting'] || [],
+            'waiting_area',
+            nextArea
+          );
+          board.appendChild(waitAreaCol);
+        }
+      }
+
+      // Completed column
+      const completedCol = createColumn('Completados', '#198754', kanban.completed || [], 'completed');
+      board.appendChild(completedCol);
+    }
+
+    function createColumn(title, color, turns, status, area) {
+      const col = document.createElement('div');
+      col.className = 'kanban-column';
+
+      const header = document.createElement('div');
+      header.className = 'kanban-column-header';
+      header.style.backgroundColor = color;
+      header.innerHTML = `
+        <span>${title}</span>
+        <span class="count">${turns.length}</span>
+      `;
+      col.appendChild(header);
+
+      const cards = document.createElement('div');
+      cards.className = 'kanban-cards';
+
+      for (const turn of turns) {
+        const card = createCard(turn, status, area);
+        cards.appendChild(card);
+      }
+
+      if (turns.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'text-align:center;padding:2rem;color:#adb5bd;font-style:italic;';
+        empty.textContent = 'Sin turnos';
+        cards.appendChild(empty);
+      }
+
+      col.appendChild(cards);
+      return col;
+    }
+
+    function createCard(turn, status, area) {
+      const card = document.createElement('div');
+      card.className = 'kanban-card' + (turn.is_preferential ? ' preferential' : '');
+
+      const timeStr = turn.created_at ? new Date(turn.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '';
+
+      let badgeHtml = '';
+      if (turn.is_preferential) {
+        badgeHtml = '<span class="badge badge-preferential">⭐ Preferencial</span>';
+      }
+
+      let actionsHtml = '';
+      if (status === 'waiting') {
+        // Can call to any area
+        for (const a of areas) {
+          actionsHtml += `<button class="btn btn-primary btn-sm" onclick="callTurn(${turn.id}, ${a.id})">📞 Llamar a ${a.name}</button>`;
+        }
+        actionsHtml += `<button class="btn btn-danger btn-sm" onclick="cancelTurn(${turn.id})">✕ Cancelar</button>`;
+      } else if (status === 'attending' && area) {
+        // Can transfer to next area or complete
+        const areaIdx = areas.findIndex(a => a.id === area.id);
+        if (areaIdx < areas.length - 1) {
+          const nextArea = areas[areaIdx + 1];
+          actionsHtml += `<button class="btn btn-info btn-sm" onclick="transferTurn(${turn.id}, ${nextArea.id})">→ Pasar a ${nextArea.name}</button>`;
+        }
+        actionsHtml += `<button class="btn btn-success btn-sm" onclick="completeTurn(${turn.id})">✓ Completar</button>`;
+        actionsHtml += `<button class="btn btn-danger btn-sm" onclick="cancelTurn(${turn.id})">✕ Cancelar</button>`;
+      } else if (status === 'waiting_area' && area) {
+        // Can call to this area
+        actionsHtml += `<button class="btn btn-primary btn-sm" onclick="callTurn(${turn.id}, ${area.id})">📞 Llamar</button>`;
+        actionsHtml += `<button class="btn btn-danger btn-sm" onclick="cancelTurn(${turn.id})">✕ Cancelar</button>`;
+      }
+
+      card.innerHTML = `
+        <div class="turn-code">${turn.code}</div>
+        <div class="turn-type">${turn.type_name}${turn.sub_type ? ' (' + turn.sub_type + ')' : ''}</div>
+        <div class="turn-time">🕐 ${timeStr}</div>
+        ${badgeHtml}
+        <div class="turn-actions">${actionsHtml}</div>
+      `;
+
+      return card;
+    }
+
+    async function callTurn(turnId, areaId) {
+      if (!currentOperator) return;
+      try {
+        await fetch(`/api/turns/${turnId}/call`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ areaId, operatorId: currentOperator.id })
+        });
+        showNotification('Turno llamado exitosamente', 'success');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function transferTurn(turnId, toAreaId) {
+      if (!currentOperator) return;
+      try {
+        await fetch(`/api/turns/${turnId}/transfer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ toAreaId, operatorId: currentOperator.id })
+        });
+        showNotification('Turno transferido exitosamente', 'info');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function completeTurn(turnId) {
+      if (!currentOperator) return;
+      try {
+        await fetch(`/api/turns/${turnId}/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ operatorId: currentOperator.id })
+        });
+        showNotification('Turno completado', 'success');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function cancelTurn(turnId) {
+      if (!currentOperator) return;
+      if (!confirm('¿Cancelar este turno?')) return;
+      try {
+        await fetch(`/api/turns/${turnId}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ operatorId: currentOperator.id })
+        });
+        showNotification('Turno cancelado', 'info');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function showNotification(message, type) {
+      const bar = document.getElementById('notifBar');
+      bar.textContent = message;
+      bar.className = `notification-bar ${type} show`;
+      setTimeout(() => bar.classList.remove('show'), 3000);
+    }
+
+    // Real-time updates
+    socket.on('kanban-update', (data) => {
+      renderKanban(data);
+    });
+
+    socket.on('turn-called', (turn) => {
+      // Play notification sound
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRl9vT19teleXdhdmVmbXQgAAAAA=');
+        audio.play().catch(() => {});
+      } catch(e) {}
+    });
+
+    init();
+  </script>
+</body>
+</html>

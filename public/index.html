@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-TURNS - Sistema de Turnos</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    .home-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+      color: white;
+      padding: 2rem;
+    }
+    .home-title {
+      font-size: 3.5rem;
+      font-weight: 900;
+      margin-bottom: 0.5rem;
+    }
+    .home-subtitle {
+      font-size: 1.3rem;
+      opacity: 0.8;
+      margin-bottom: 3rem;
+    }
+    .home-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      max-width: 800px;
+      width: 100%;
+    }
+    .home-link {
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      text-decoration: none;
+      color: white;
+      transition: all 0.3s;
+      backdrop-filter: blur(10px);
+    }
+    .home-link:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    .home-link .icon {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 0.75rem;
+    }
+    .home-link .label {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+    .home-link .desc {
+      font-size: 0.85rem;
+      opacity: 0.7;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="home-container">
+    <h1 class="home-title">🎫 E-TURNS</h1>
+    <p class="home-subtitle">Sistema de Gestión de Turnos</p>
+    <div class="home-links">
+      <a href="/kiosk/" class="home-link">
+        <span class="icon">🖥️</span>
+        <span class="label">Kiosco</span>
+        <span class="desc">Toma tu turno</span>
+      </a>
+      <a href="/panel/" class="home-link">
+        <span class="icon">🏢</span>
+        <span class="label">Panel de Operador</span>
+        <span class="desc">Kanban de atención</span>
+      </a>
+      <a href="/display/" class="home-link">
+        <span class="icon">📺</span>
+        <span class="label">Pantalla</span>
+        <span class="desc">Visualización de turnos</span>
+      </a>
+      <a href="/stats/" class="home-link">
+        <span class="icon">📊</span>
+        <span class="label">Estadísticas</span>
+        <span class="desc">Reportes y exportación</span>
+      </a>
+      <a href="/config/" class="home-link">
+        <span class="icon">⚙️</span>
+        <span class="label">Configuración</span>
+        <span class="desc">Personalización</span>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

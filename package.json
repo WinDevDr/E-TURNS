@@ -1,0 +1,25 @@
+{
+  "name": "e-turns",
+  "version": "1.0.0",
+  "description": "Sistema de Turnos - Queue Management System with Kanban, Kiosk, Display Screen, and Statistics",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "keywords": [
+    "turnos",
+    "queue",
+    "kanban",
+    "kiosk"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "socket.io": "^4.8.3",
+    "uuid": "^13.0.0"
+  }
+}

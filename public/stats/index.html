@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-TURNS - Estadísticas</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <h1>📊 Estadísticas</h1>
+    <div class="navbar-links">
+      <a href="/kiosk/">Kiosco</a>
+      <a href="/panel/">Panel</a>
+      <a href="/display/">Pantalla</a>
+      <a href="/stats/" class="active">Estadísticas</a>
+      <a href="/config/">Configuración</a>
+    </div>
+  </nav>
+
+  <div class="stats-container">
+    <div class="card">
+      <div class="card-header">📅 Filtrar por Fecha</div>
+      <div class="stats-filters">
+        <div class="form-group">
+          <label>Fecha Inicio</label>
+          <input type="date" class="form-control" id="startDate">
+        </div>
+        <div class="form-group">
+          <label>Fecha Fin</label>
+          <input type="date" class="form-control" id="endDate">
+        </div>
+        <button class="btn btn-primary" onclick="loadStats()">🔍 Buscar</button>
+        <button class="btn btn-success" onclick="exportExcel()">📥 Exportar Excel</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        📋 Detalle de Turnos
+        <span id="recordCount" style="font-size:0.9rem;font-weight:400;color:var(--gray);margin-left:1rem;"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Tipo</th>
+              <th>Preferencial</th>
+              <th>Sub-Tipo</th>
+              <th>Hora de Llegada</th>
+              <th>Hora Llamado Facturación</th>
+              <th>Operador Facturación</th>
+              <th>Hora Llamado Toma de Muestra</th>
+              <th>Operador Toma de Muestra</th>
+              <th>Hora Completado</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="statsBody">
+            <tr><td colspan="11" style="padding:2rem;color:#adb5bd;">Seleccione un rango de fechas y presione Buscar</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Set default dates to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('startDate').value = today;
+    document.getElementById('endDate').value = today;
+
+    const statusMap = {
+      'waiting': 'En Espera',
+      'attending': 'Atendiendo',
+      'waiting_area': 'Esperando Área',
+      'completed': 'Completado',
+      'cancelled': 'Cancelado'
+    };
+
+    async function loadStats() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      if (!startDate || !endDate) {
+        alert('Seleccione ambas fechas');
+        return;
+      }
+
+      const data = await fetch(`/api/stats?startDate=${startDate}&endDate=${endDate}`).then(r => r.json());
+      renderTable(data);
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('statsBody');
+      document.getElementById('recordCount').textContent = `${data.length} registros`;
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="padding:2rem;color:#adb5bd;">No se encontraron registros</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      for (const row of data) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${row.code}</strong></td>
+          <td>${row.turn_type}</td>
+          <td>${row.is_preferential ? '⭐ Sí' : 'No'}</td>
+          <td>${row.sub_type || '-'}</td>
+          <td>${formatTime(row.arrival_time)}</td>
+          <td>${formatTime(row.called_facturacion_time)}</td>
+          <td>${row.operator_facturacion || '-'}</td>
+          <td>${formatTime(row.called_toma_time)}</td>
+          <td>${row.operator_toma || '-'}</td>
+          <td>${formatTime(row.completed_time)}</td>
+          <td><span class="badge badge-${getStatusClass(row.status)}">${statusMap[row.status] || row.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function formatTime(dateStr) {
+      if (!dateStr) return '-';
+      return dateStr;
+    }
+
+    function getStatusClass(status) {
+      const map = {
+        'waiting': 'waiting',
+        'attending': 'attending',
+        'completed': 'completed',
+        'cancelled': 'waiting'
+      };
+      return map[status] || 'waiting';
+    }
+
+    function exportExcel() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      if (!startDate || !endDate) {
+        alert('Seleccione ambas fechas');
+        return;
+      }
+
+      window.open(`/api/stats/excel?startDate=${startDate}&endDate=${endDate}`, '_blank');
+    }
+
+    // Auto-load today's data
+    loadStats();
+  </script>
+</body>
+</html>

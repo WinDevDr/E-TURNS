@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-TURNS - Kiosco de Turnos</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body {
+      overflow: hidden;
+    }
+    .kiosk-container {
+      transition: background-color 0.3s;
+    }
+    .kiosk-back-btn {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      border: 2px solid rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.15);
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: none;
+    }
+    .kiosk-back-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    .preferential-section {
+      display: none;
+    }
+    .preferential-section.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .main-section.hidden-section {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="kiosk-container" id="kioskContainer">
+    <button class="kiosk-back-btn" id="backBtn" onclick="showMain()">← Regresar</button>
+    
+    <div class="main-section" id="mainSection">
+      <h1 class="kiosk-title" id="kioskTitle">Toma tu Turno</h1>
+      <p class="kiosk-subtitle" id="kioskSubtitle">Selecciona el tipo de servicio</p>
+      <div class="kiosk-options" id="kioskOptions"></div>
+    </div>
+
+    <div class="preferential-section" id="preferentialSection">
+      <h1 class="kiosk-title" id="prefTitle">Turno Preferencial</h1>
+      <p class="kiosk-subtitle">Selecciona el tipo de servicio preferencial</p>
+      <div class="kiosk-options" id="prefOptions"></div>
+    </div>
+  </div>
+
+  <!-- Ticket Modal -->
+  <div class="ticket-modal" id="ticketModal">
+    <div class="ticket-content">
+      <p class="ticket-label">Su número de turno es:</p>
+      <div class="ticket-number" id="ticketNumber"></div>
+      <p class="ticket-message" id="ticketMessage">Por favor espere a ser llamado</p>
+      <button class="btn btn-primary btn-lg" onclick="closeTicket()">Aceptar</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let config = {};
+    let turnTypes = [];
+
+    async function init() {
+      const [cfgRes, typesRes] = await Promise.all([
+        fetch('/api/config').then(r => r.json()),
+        fetch('/api/turn-types').then(r => r.json())
+      ]);
+      config = cfgRes;
+      turnTypes = typesRes;
+      applyConfig();
+      renderOptions();
+    }
+
+    function applyConfig() {
+      const container = document.getElementById('kioskContainer');
+      container.style.backgroundColor = config.kiosk_bg_color || '#0d6efd';
+      container.style.color = config.kiosk_text_color || '#ffffff';
+
+      const backBtn = document.getElementById('backBtn');
+      backBtn.style.color = config.kiosk_text_color || '#ffffff';
+    }
+
+    function renderOptions() {
+      const optionsDiv = document.getElementById('kioskOptions');
+      const prefOptionsDiv = document.getElementById('prefOptions');
+      const icons = {
+        'Asegurado': '🏥',
+        'No Asegurado': '👤',
+        'Entrega de Resultados': '📋',
+        'Toma de Muestra': '🩸',
+        'Pre-Empleo': '💼',
+        'Turno Preferencial': '⭐'
+      };
+
+      optionsDiv.innerHTML = '';
+      prefOptionsDiv.innerHTML = '';
+
+      for (const type of turnTypes) {
+        const btn = document.createElement('button');
+        btn.className = 'kiosk-btn';
+        btn.style.backgroundColor = config.kiosk_btn_color || '#ffffff';
+        btn.style.color = config.kiosk_btn_text_color || '#0d6efd';
+        btn.innerHTML = `
+          <span class="icon">${icons[type.name] || '🎫'}</span>
+          <span>${type.name}</span>
+        `;
+
+        if (type.name === 'Turno Preferencial') {
+          btn.onclick = () => showPreferential();
+        } else {
+          btn.onclick = () => createTurn(type.id, false, null);
+        }
+        optionsDiv.appendChild(btn);
+
+        // Add non-preferential options to preferential section (except Turno Preferencial itself)
+        if (type.name !== 'Turno Preferencial') {
+          const prefBtn = document.createElement('button');
+          prefBtn.className = 'kiosk-btn';
+          prefBtn.style.backgroundColor = config.kiosk_btn_color || '#ffffff';
+          prefBtn.style.color = config.kiosk_btn_text_color || '#0d6efd';
+          prefBtn.innerHTML = `
+            <span class="icon">${icons[type.name] || '🎫'}</span>
+            <span>${type.name}</span>
+            <span style="font-size:0.8rem;opacity:0.7">⭐ Preferencial</span>
+          `;
+          prefBtn.onclick = () => createTurn(type.id, true, type.name);
+          prefOptionsDiv.appendChild(prefBtn);
+        }
+      }
+    }
+
+    function showPreferential() {
+      document.getElementById('mainSection').classList.add('hidden-section');
+      document.getElementById('preferentialSection').classList.add('active');
+      document.getElementById('backBtn').style.display = 'block';
+    }
+
+    function showMain() {
+      document.getElementById('mainSection').classList.remove('hidden-section');
+      document.getElementById('preferentialSection').classList.remove('active');
+      document.getElementById('backBtn').style.display = 'none';
+    }
+
+    async function createTurn(turnTypeId, isPreferential, subType) {
+      try {
+        const res = await fetch('/api/turns', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ turnTypeId, isPreferential, subType })
+        });
+        const turn = await res.json();
+        if (turn.code) {
+          showTicket(turn);
+          showMain(); // Reset to main view
+        }
+      } catch (err) {
+        console.error('Error creating turn:', err);
+      }
+    }
+
+    function showTicket(turn) {
+      document.getElementById('ticketNumber').textContent = turn.code;
+      const msg = turn.is_preferential ? 'Turno Preferencial - Por favor espere' : 'Por favor espere a ser llamado';
+      document.getElementById('ticketMessage').textContent = msg;
+      document.getElementById('ticketModal').classList.add('active');
+    }
+
+    function closeTicket() {
+      document.getElementById('ticketModal').classList.remove('active');
+    }
+
+    // Listen for config updates
+    socket.on('config-updated', (newConfig) => {
+      config = newConfig;
+      applyConfig();
+      renderOptions();
+    });
+
+    // Auto-close ticket after 8 seconds
+    let ticketTimeout;
+    const observer = new MutationObserver(() => {
+      const modal = document.getElementById('ticketModal');
+      if (modal.classList.contains('active')) {
+        clearTimeout(ticketTimeout);
+        ticketTimeout = setTimeout(closeTicket, 8000);
+      }
+    });
+    observer.observe(document.getElementById('ticketModal'), { attributes: true, attributeFilter: ['class'] });
+
+    init();
+  </script>
+</body>
+</html>

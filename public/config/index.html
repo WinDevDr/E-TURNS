@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-TURNS - Configuración</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <h1>⚙️ Configuración</h1>
+    <div class="navbar-links">
+      <a href="/kiosk/">Kiosco</a>
+      <a href="/panel/">Panel</a>
+      <a href="/display/">Pantalla</a>
+      <a href="/stats/">Estadísticas</a>
+      <a href="/config/" class="active">Configuración</a>
+    </div>
+  </nav>
+
+  <div class="config-container">
+    <!-- Alert -->
+    <div class="alert alert-success" id="successAlert" style="display:none;">
+      ✅ Configuración guardada exitosamente
+    </div>
+
+    <!-- Kiosk Colors -->
+    <div class="card config-section">
+      <h3>🎨 Colores del Kiosco</h3>
+      <div class="color-picker-group">
+        <div class="color-picker-item">
+          <input type="color" id="kiosk_bg_color" value="#0d6efd">
+          <label>Color de Fondo</label>
+        </div>
+        <div class="color-picker-item">
+          <input type="color" id="kiosk_text_color" value="#ffffff">
+          <label>Color de Texto</label>
+        </div>
+        <div class="color-picker-item">
+          <input type="color" id="kiosk_btn_color" value="#ffffff">
+          <label>Color de Botones</label>
+        </div>
+        <div class="color-picker-item">
+          <input type="color" id="kiosk_btn_text_color" value="#0d6efd">
+          <label>Color Texto Botones</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Display Colors -->
+    <div class="card config-section">
+      <h3>📺 Colores de Pantalla de Visualización</h3>
+      <div class="color-picker-group">
+        <div class="color-picker-item">
+          <input type="color" id="display_bg_color" value="#1a1a2e">
+          <label>Color de Fondo</label>
+        </div>
+        <div class="color-picker-item">
+          <input type="color" id="display_text_color" value="#ffffff">
+          <label>Color de Texto</label>
+        </div>
+        <div class="color-picker-item">
+          <input type="color" id="display_highlight_color" value="#e94560">
+          <label>Color de Resaltado</label>
+        </div>
+        <div class="color-picker-item">
+          <input type="color" id="display_header_color" value="#16213e">
+          <label>Color de Encabezado</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Display Content -->
+    <div class="card config-section">
+      <h3>📝 Contenido de Pantalla</h3>
+      <div class="form-group">
+        <label>Nombre de Sucursal</label>
+        <input type="text" class="form-control" id="branch_name" placeholder="Sucursal Principal">
+      </div>
+      <div class="form-group">
+        <label>Horario de la Sucursal</label>
+        <input type="text" class="form-control" id="display_schedule" placeholder="Lunes a Viernes: 7:00 AM - 5:00 PM">
+      </div>
+      <div class="form-group">
+        <label>Mensaje en Pantalla</label>
+        <textarea class="form-control" id="display_message" rows="3" placeholder="Mensaje para mostrar en la pantalla"></textarea>
+      </div>
+    </div>
+
+    <!-- Video / YouTube -->
+    <div class="card config-section">
+      <h3>🎬 Video / YouTube</h3>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="display_youtube_enabled"> 
+          Activar YouTube
+        </label>
+      </div>
+      <div class="form-group">
+        <label>URL de YouTube</label>
+        <input type="text" class="form-control" id="display_youtube_url" placeholder="https://www.youtube.com/watch?v=...">
+      </div>
+      <hr style="margin:1.5rem 0;border-color:#dee2e6;">
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="display_video_enabled"> 
+          Activar Video Local
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Subir Video de Publicidad</label>
+        <input type="file" class="form-control" id="videoUpload" accept="video/*">
+        <p class="text-muted mt-1" style="font-size:0.85rem;">Formatos: MP4, WebM, OGG, MOV (máx. 100MB)</p>
+      </div>
+      <div id="currentVideoInfo" style="display:none;" class="alert alert-info mt-2">
+        <strong>Video actual:</strong> <span id="currentVideoUrl"></span>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <button class="btn btn-primary btn-lg btn-block" onclick="saveConfig()">💾 Guardar Configuración</button>
+  </div>
+
+  <script>
+    let config = {};
+
+    const configFields = [
+      'kiosk_bg_color', 'kiosk_text_color', 'kiosk_btn_color', 'kiosk_btn_text_color',
+      'display_bg_color', 'display_text_color', 'display_highlight_color', 'display_header_color',
+      'branch_name', 'display_schedule', 'display_message',
+      'display_youtube_url'
+    ];
+
+    const checkboxFields = ['display_youtube_enabled', 'display_video_enabled'];
+
+    async function init() {
+      config = await fetch('/api/config').then(r => r.json());
+      loadConfigToForm();
+    }
+
+    function loadConfigToForm() {
+      for (const field of configFields) {
+        const el = document.getElementById(field);
+        if (el && config[field] !== undefined) {
+          el.value = config[field];
+        }
+      }
+      for (const field of checkboxFields) {
+        const el = document.getElementById(field);
+        if (el) {
+          el.checked = config[field] === 'true';
+        }
+      }
+      if (config.display_video_url) {
+        document.getElementById('currentVideoInfo').style.display = 'block';
+        document.getElementById('currentVideoUrl').textContent = config.display_video_url;
+      }
+    }
+
+    async function saveConfig() {
+      const data = {};
+
+      for (const field of configFields) {
+        const el = document.getElementById(field);
+        if (el) {
+          data[field] = el.value;
+        }
+      }
+      for (const field of checkboxFields) {
+        const el = document.getElementById(field);
+        if (el) {
+          data[field] = el.checked ? 'true' : 'false';
+        }
+      }
+
+      // Upload video if selected
+      const videoInput = document.getElementById('videoUpload');
+      if (videoInput.files && videoInput.files[0]) {
+        const formData = new FormData();
+        formData.append('video', videoInput.files[0]);
+        try {
+          const uploadRes = await fetch('/api/config/upload-video', {
+            method: 'POST',
+            body: formData
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.url) {
+            data.display_video_url = uploadData.url;
+            data.display_video_enabled = 'true';
+          }
+        } catch (err) {
+          console.error('Error uploading video:', err);
+        }
+      }
+
+      // Save config
+      try {
+        await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const alert = document.getElementById('successAlert');
+        alert.style.display = 'block';
+        setTimeout(() => alert.style.display = 'none', 3000);
+
+        // Reload config
+        config = await fetch('/api/config').then(r => r.json());
+        loadConfigToForm();
+      } catch (err) {
+        console.error('Error saving config:', err);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
