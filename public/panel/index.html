@@ -335,8 +335,19 @@
         statFact.style.display = 'none';
         statEsperaMuestra.style.display = '';
         statTomaMuestra.style.display = '';
+      } else if (miTipoArea === 'facturacion') {
+        // Facturación: hide Espera Toma de Muestra
+        colEspera.classList.remove('hidden');
+        colFact.classList.remove('hidden');
+        colEsperaMuestra.classList.add('hidden');
+        colTomaMuestra.classList.add('hidden');
+        colFin.classList.remove('hidden');
+        statEspera.style.display = '';
+        statFact.style.display = '';
+        statEsperaMuestra.style.display = 'none';
+        statTomaMuestra.style.display = 'none';
       } else {
-        // Facturación: show Sala de Espera, En Facturación, Espera Toma de Muestra, Finalizados
+        // Vista general: show Sala de Espera, En Facturación, Espera Toma de Muestra, Finalizados
         colEspera.classList.remove('hidden');
         colFact.classList.remove('hidden');
         colEsperaMuestra.classList.remove('hidden');

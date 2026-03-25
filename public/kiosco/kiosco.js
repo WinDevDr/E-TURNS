@@ -171,6 +171,7 @@ async function _crearTurno(tipo_paciente, area, preferencial) {
     autoCloseTimer = setTimeout(() => cerrarModal(), 2000);
 
     socket.emit('new_turn', turno);
+    setTimeout(() => imprimirTicket(), 100);
   } catch (e) {
     alert('Error al solicitar turno. Intente nuevamente.');
   }
@@ -203,18 +204,26 @@ function imprimirTicket() {
     ? `<p><strong>Tipo:</strong> ${turnoActual.tipo_paciente}</p>`
     : '';
 
-  const win = window.open('', '_blank', 'width=400,height=580');
-  win.document.write(`
+  const html = `
     <!DOCTYPE html>
     <html lang="es">
     <head>
       <meta charset="UTF-8">
       <title>Ticket</title>
       <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
-        .numero { font-size: 5rem; font-weight: 900; color: #FF8500; margin: 1rem 0; }
-        p { color: #555; }
-        hr { margin: 1rem 0; }
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap');
+        @page { size: 80mm auto; margin: 0; }
+        body {
+          font-family: 'Comfortaa', Arial, sans-serif;
+          text-align: center;
+          width: 80mm;
+          margin: 0;
+          padding: 6mm 4mm;
+          color: #333;
+        }
+        .numero { font-size: 4.4rem; font-weight: 900; color: #FF8500; margin: 0.6rem 0; }
+        p { color: #555; margin: 0.3rem 0; }
+        hr { margin: 0.8rem 0; border: 0; border-top: 1px solid #ddd; }
       </style>
     </head>
     <body>
@@ -227,11 +236,28 @@ function imprimirTicket() {
       <p><strong>Hora:</strong> ${new Date(turnoActual.fecha_hora).toLocaleString('es-ES')}</p>
       <hr>
       <p>Por favor espere a ser llamado.</p>
-      <script>window.onload = function() { window.print(); window.close(); };<\/script>
     </body>
     </html>
-  `);
-  win.document.close();
+  `;
+
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.style.opacity = '0';
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } finally {
+      setTimeout(() => iframe.remove(), 1000);
+    }
+  };
+  iframe.srcdoc = html;
+  document.body.appendChild(iframe);
   autoCloseTimer = setTimeout(() => cerrarModal(), 2000);
 }
 
