@@ -329,6 +329,7 @@
 
         ajustarVelocidadTicker();
         if (config.voz_tts) window._vozTts = config.voz_tts;
+        if (config.font_family) document.body.style.fontFamily = config.font_family;
       } catch (e) { console.warn('Error al cargar config:', e); }
     }
 

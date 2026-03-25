@@ -175,15 +175,29 @@ function initDatabase() {
     db.get('SELECT COUNT(*) as count FROM tipos_kiosco', (err, row) => {
       if (!err && row.count === 0) {
         const tiposDefault = [
-          { nombre: 'Asegurado', color: '#FF8500', orden: 1 },
-          { nombre: 'No Asegurado', color: '#d4730a', orden: 2 },
-          { nombre: 'Entrega de Resultados', color: '#e06000', orden: 3 },
-          { nombre: 'Toma de Muestra', color: '#b35900', orden: 4 },
-          { nombre: 'Pre-Empleo', color: '#ff9d33', orden: 5 }
+          { nombre: 'Asegurado', color: '#FF8500', orden: 1, prefijo: 'A' },
+          { nombre: 'No Asegurado', color: '#d4730a', orden: 2, prefijo: 'N' },
+          { nombre: 'Entrega de Resultados', color: '#e06000', orden: 3, prefijo: 'R' },
+          { nombre: 'Toma de Muestra', color: '#b35900', orden: 4, prefijo: 'T' },
+          { nombre: 'Pre-Empleo', color: '#ff9d33', orden: 5, prefijo: 'P' }
         ];
-        const stmt = db.prepare('INSERT INTO tipos_kiosco (nombre, color, orden) VALUES (?, ?, ?)');
-        tiposDefault.forEach(t => stmt.run(t.nombre, t.color, t.orden));
+        const stmt = db.prepare('INSERT INTO tipos_kiosco (nombre, color, orden, prefijo) VALUES (?, ?, ?, ?)');
+        tiposDefault.forEach(t => stmt.run(t.nombre, t.color, t.orden, t.prefijo));
         stmt.finalize();
+      }
+    });
+
+    // Migración: columna prefijo en tipos_kiosco
+    db.run(`ALTER TABLE tipos_kiosco ADD COLUMN prefijo TEXT`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.warn('[DB] Migración tipos_kiosco.prefijo:', err.message);
+      }
+    });
+
+    // Migración: columna tipo_area en usuarios ('facturacion', 'muestra', null)
+    db.run(`ALTER TABLE usuarios ADD COLUMN tipo_area TEXT`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.warn('[DB] Migración usuarios.tipo_area:', err.message);
       }
     });
   });

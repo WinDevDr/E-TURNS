@@ -122,48 +122,6 @@
       to { width: 0%; }
     }
     /* Branch selection overlay */
-    #branch-overlay {
-      display: none;
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85);
-      z-index: 2000;
-      align-items: center;
-      justify-content: center;
-    }
-    #branch-overlay.active { display: flex; }
-    .branch-modal {
-      background: #fff;
-      border-radius: 20px;
-      padding: 2.5rem 2rem;
-      text-align: center;
-      max-width: 460px;
-      width: 95%;
-    }
-    .branch-modal h3 { font-size: 1.5rem; font-weight: 800; color: #333; margin-bottom: 0.5rem; }
-    .branch-modal p { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
-    .branch-modal select {
-      width: 100%;
-      padding: 0.8rem 1rem;
-      border: 2px solid #FF8500;
-      border-radius: 10px;
-      font-size: 1rem;
-      color: #333;
-      background: #fafafa;
-      margin-bottom: 1.25rem;
-      cursor: pointer;
-    }
-    .branch-confirm-btn {
-      width: 100%;
-      padding: 0.85rem;
-      background: #FF8500;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .branch-confirm-btn:hover { background: #e07500; }
     .sucursal-tag {
       text-align: center;
       font-size: 0.8rem;
@@ -176,18 +134,6 @@
   </style>
 </head>
 <body>
-
-  <!-- Branch selection overlay (shown when kiosk opens without a branch configured) -->
-  <div id="branch-overlay">
-    <div class="branch-modal">
-      <h3>Seleccione su Sucursal</h3>
-      <p>Por favor seleccione la sucursal a la que pertenece este kiosco:</p>
-      <select id="branch-select" size="1">
-        <option value="">-- Cargando sucursales... --</option>
-      </select>
-      <button class="branch-confirm-btn" onclick="confirmarSucursalKiosco()">Confirmar</button>
-    </div>
-  </div>
 
   <header>
     <img id="hospital-logo" src="" alt="Logo" style="display:none">

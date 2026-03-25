@@ -1,7 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 const db = require('../db/database');
+
+const meRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intente más tarde.' }
+});
 
 // POST /auth/login — paso 1: credenciales (sin rol)
 router.post('/login', (req, res) => {
@@ -119,17 +128,21 @@ router.post('/logout', (req, res) => {
 });
 
 // GET /auth/me
-router.get('/me', (req, res) => {
+router.get('/me', meRateLimiter, (req, res) => {
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ error: 'No autenticado.' });
   }
-  res.json({
-    userId: req.session.userId,
-    username: req.session.username,
-    rol: req.session.rol,
-    nombre: req.session.nombre,
-    sucursalId: req.session.sucursalId || null,
-    sucursalNombre: req.session.sucursalNombre || null
+  // Fetch fresh user data including tipo_area
+  db.get('SELECT tipo_area FROM usuarios WHERE id = ?', [req.session.userId], (err, row) => {
+    res.json({
+      userId: req.session.userId,
+      username: req.session.username,
+      rol: req.session.rol,
+      nombre: req.session.nombre,
+      sucursalId: req.session.sucursalId || null,
+      sucursalNombre: req.session.sucursalNombre || null,
+      tipo_area: (row && row.tipo_area) || null
+    });
   });
 });
 

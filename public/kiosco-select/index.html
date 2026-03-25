@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seleccionar Sucursal — Kiosco</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #FF8500 0%, #e06000 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 460px;
+      text-align: center;
+    }
+    #hospital-logo {
+      max-height: 80px;
+      max-width: 220px;
+      object-fit: contain;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    #hospital-nombre {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #FF8500;
+      margin-bottom: 0.25rem;
+    }
+    h2 {
+      font-size: 1.1rem;
+      color: #555;
+      font-weight: 500;
+      margin-bottom: 1.75rem;
+    }
+    .form-group { margin-bottom: 1.25rem; text-align: left; }
+    label { display: block; font-weight: 600; color: #444; margin-bottom: 0.4rem; font-size: 0.95rem; }
+    select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #dee2e6;
+      border-radius: 10px;
+      font-size: 1rem;
+      color: #333;
+      background: #fafafa;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    select:focus { outline: none; border-color: #FF8500; }
+    .btn-confirm {
+      width: 100%;
+      padding: 0.9rem;
+      background: linear-gradient(90deg, #FF8500, #e06000);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 0.5rem;
+    }
+    .btn-confirm:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-confirm:active { transform: translateY(0); }
+    .alert-error {
+      padding: 0.7rem 1rem;
+      background: #f8d7da;
+      color: #842029;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: none;
+    }
+    footer { margin-top: 1.5rem; font-size: 0.8rem; color: #aaa; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img id="hospital-logo" src="" alt="Logo">
+    <div id="hospital-nombre">E-TURNS</div>
+    <h2>Seleccione la sucursal de este kiosco</h2>
+
+    <div class="alert-error" id="alerta"></div>
+
+    <div class="form-group">
+      <label for="sucursal-select">🏢 Sucursal</label>
+      <select id="sucursal-select">
+        <option value="">— Cargando sucursales... —</option>
+      </select>
+    </div>
+
+    <button class="btn-confirm" onclick="confirmar()">✅ Confirmar y Entrar al Kiosco</button>
+
+    <footer>E-TURNS &copy; 2024 · Sistema de Gestión de Turnos</footer>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'eturn_kiosco_sucursal';
+
+    async function cargarConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const config = await res.json();
+        if (config.nombre) {
+          document.getElementById('hospital-nombre').textContent = config.nombre;
+          document.title = 'Seleccionar Sucursal — ' + config.nombre;
+        }
+        const logoUrl = config.logo_url || config.logo;
+        if (logoUrl) {
+          const logo = document.getElementById('hospital-logo');
+          logo.src = logoUrl;
+          logo.style.display = 'block';
+          document.getElementById('hospital-nombre').style.display = 'none';
+        }
+        if (config.color_kiosco_fondo) {
+          // Use kiosk color to tint gradient via CSS custom property
+          document.body.style.background = `linear-gradient(135deg, ${config.color_kiosco_fondo} 0%, #e06000 100%)`;
+        }
+        // Apply font
+        if (config.font_family) {
+          document.body.style.fontFamily = config.font_family;
+        }
+      } catch (e) {}
+    }
+
+    async function cargarSucursales() {
+      try {
+        const res = await fetch('/api/sucursales/public');
+        const sucursales = await res.json();
+        const sel = document.getElementById('sucursal-select');
+
+        if (!sucursales || sucursales.length === 0) {
+          sel.innerHTML = '<option value="">— Sin sucursales configuradas —</option>';
+          return;
+        }
+
+        sel.innerHTML = '<option value="">— Seleccione una sucursal —</option>';
+        sucursales.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.nombre;
+          sel.appendChild(opt);
+        });
+
+        // Auto-select if only one
+        if (sucursales.length === 1) {
+          sel.value = sucursales[0].id;
+        }
+
+        // Make select taller for small lists
+        sel.size = Math.min(sucursales.length + 1, 7);
+      } catch (e) {
+        document.getElementById('alerta').textContent = 'Error al cargar sucursales.';
+        document.getElementById('alerta').style.display = 'block';
+      }
+    }
+
+    function confirmar() {
+      const sel = document.getElementById('sucursal-select');
+      const id = parseInt(sel.value);
+      if (!id || id <= 0) {
+        document.getElementById('alerta').textContent = 'Por favor seleccione una sucursal.';
+        document.getElementById('alerta').style.display = 'block';
+        return;
+      }
+      document.getElementById('alerta').style.display = 'none';
+      const nombre = sel.options[sel.selectedIndex].textContent;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, nombre }));
+      window.location.href = '/kiosco';
+    }
+
+    cargarConfig();
+    cargarSucursales();
+  </script>
+</body>
+</html>

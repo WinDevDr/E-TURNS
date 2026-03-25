@@ -62,6 +62,7 @@ const loginLimiter = rateLimit({
 
 app.use('/auth/login', loginLimiter);
 app.use('/auth/select-branch', loginLimiter); // also rate-limit branch selection
+app.use('/auth/me', apiLimiter); // rate-limit /auth/me since it queries DB
 app.use('/auth', authRouter);
 
 // Rutas de vistas — se definen ANTES de express.static para que tengan prioridad
@@ -84,6 +85,7 @@ app.get('/home', viewLimiter, requireAuth, requireAdmin, (req, res) =>
 );
 
 app.get('/kiosco', viewLimiter, (req, res) => res.sendFile(path.join(__dirname, 'public', 'kiosco', 'index.html')));
+app.get('/kiosco-select', viewLimiter, (req, res) => res.sendFile(path.join(__dirname, 'public', 'kiosco-select', 'index.html')));
 app.get('/kiosco/preferencial', viewLimiter, (req, res) => res.sendFile(path.join(__dirname, 'public', 'kiosco', 'index.html')));
 app.get('/panel', viewLimiter, requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'panel', 'index.html')));
 app.get('/pantalla', viewLimiter, (req, res) => res.sendFile(path.join(__dirname, 'public', 'pantalla', 'index.html')));

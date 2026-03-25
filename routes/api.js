@@ -87,7 +87,7 @@ router.post('/turnos', (req, res) => {
   const { tipo_paciente, preferencial } = req.body;
   let { area, sucursal_id } = req.body;
 
-  // Todos los tipos pasan por Facturación primero (incluyendo Entrega de Resultados)
+  // Todos los tipos pasan por Facturación primero
   if (!area) {
     area = 'Facturación';
   }
@@ -95,16 +95,53 @@ router.post('/turnos', (req, res) => {
   const etapa_inicial = 'espera_sala';
   const esPreferencial = preferencial ? 1 : 0;
   const sucursalIdFinal = sucursal_id || null;
+  const hoy = new Date().toISOString().split('T')[0];
 
-  // Obtener prefijo del área
+  // Si hay tipo_paciente, intentar usar el prefijo del tipo_kiosco
+  if (tipo_paciente) {
+    db.get('SELECT prefijo FROM tipos_kiosco WHERE nombre = ? AND activo = 1', [tipo_paciente], (err, tipoRow) => {
+      if (!err && tipoRow && tipoRow.prefijo) {
+        // Usar prefijo del tipo_kiosco; contar por tipo_paciente + fecha + sucursal
+        const prefijo = tipoRow.prefijo;
+        const countSql = sucursalIdFinal
+          ? `SELECT COUNT(*) as count FROM turnos WHERE tipo_paciente = ? AND DATE(fecha_hora) = ? AND sucursal_id = ?`
+          : `SELECT COUNT(*) as count FROM turnos WHERE tipo_paciente = ? AND DATE(fecha_hora) = ?`;
+        const countParams = sucursalIdFinal ? [tipo_paciente, hoy, sucursalIdFinal] : [tipo_paciente, hoy];
+
+        db.get(countSql, countParams, (err, row) => {
+          if (err) return res.status(500).json({ error: err.message });
+          const siguiente = (row.count || 0) + 1;
+          const numero = `${prefijo}${String(siguiente).padStart(2, '0')}`;
+
+          db.run(
+            'INSERT INTO turnos (numero, area, estado, tipo_paciente, etapa, preferencial, sucursal_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [numero, area, 'esperando', tipo_paciente, etapa_inicial, esPreferencial, sucursalIdFinal],
+            function (err) {
+              if (err) return res.status(500).json({ error: err.message });
+              db.get('SELECT * FROM turnos WHERE id = ?', [this.lastID], (err, turno) => {
+                if (err) return res.status(500).json({ error: err.message });
+                res.status(201).json(turno);
+              });
+            }
+          );
+        });
+        return; // exit outer callback
+      }
+
+      // Fallback: usar prefijo del área
+      crearTurnoConAreaPrefijo(area, tipo_paciente, etapa_inicial, esPreferencial, sucursalIdFinal, hoy, res);
+    });
+  } else {
+    crearTurnoConAreaPrefijo(area, tipo_paciente || null, etapa_inicial, esPreferencial, sucursalIdFinal, hoy, res);
+  }
+});
+
+function crearTurnoConAreaPrefijo(area, tipo_paciente, etapa_inicial, esPreferencial, sucursalIdFinal, hoy, res) {
   db.get('SELECT prefijo FROM areas WHERE nombre = ?', [area], (err, areaRow) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!areaRow) return res.status(404).json({ error: 'Área no encontrada.' });
 
     const prefijo = areaRow.prefijo;
-    const hoy = new Date().toISOString().split('T')[0];
-
-    // Contar turnos del día para esta área y sucursal
     const countSql = sucursalIdFinal
       ? `SELECT COUNT(*) as count FROM turnos WHERE area = ? AND DATE(fecha_hora) = ? AND sucursal_id = ?`
       : `SELECT COUNT(*) as count FROM turnos WHERE area = ? AND DATE(fecha_hora) = ?`;
@@ -112,13 +149,12 @@ router.post('/turnos', (req, res) => {
 
     db.get(countSql, countParams, (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
-
       const siguiente = (row.count || 0) + 1;
       const numero = `${prefijo}${String(siguiente).padStart(2, '0')}`;
 
       db.run(
         'INSERT INTO turnos (numero, area, estado, tipo_paciente, etapa, preferencial, sucursal_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [numero, area, 'esperando', tipo_paciente || null, etapa_inicial, esPreferencial, sucursalIdFinal],
+        [numero, area, 'esperando', tipo_paciente, etapa_inicial, esPreferencial, sucursalIdFinal],
         function (err) {
           if (err) return res.status(500).json({ error: err.message });
           db.get('SELECT * FROM turnos WHERE id = ?', [this.lastID], (err, turno) => {
@@ -129,7 +165,7 @@ router.post('/turnos', (req, res) => {
       );
     });
   });
-});
+}
 
 // PUT /api/turnos/:id/llamar
 router.put('/turnos/:id/llamar', requireAuth, (req, res) => {
@@ -381,7 +417,7 @@ router.delete('/ventanillas/:id', requireAuth, requireAdmin, (req, res) => {
 
 // GET /api/usuarios — listar todos los usuarios (admin y operador)
 router.get('/usuarios', requireAuth, requireAdmin, (req, res) => {
-  db.all('SELECT id, username, nombre, rol FROM usuarios ORDER BY nombre ASC', (err, rows) => {
+  db.all('SELECT id, username, nombre, rol, tipo_area FROM usuarios ORDER BY nombre ASC', (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -389,7 +425,7 @@ router.get('/usuarios', requireAuth, requireAdmin, (req, res) => {
 
 // GET /api/operadores — listar operadores (para asignación de ventanillas)
 router.get('/operadores', requireAuth, requireAdmin, (req, res) => {
-  db.all("SELECT id, username, nombre, rol FROM usuarios WHERE rol = 'operador' ORDER BY nombre ASC", (err, rows) => {
+  db.all("SELECT id, username, nombre, rol, tipo_area FROM usuarios WHERE rol = 'operador' ORDER BY nombre ASC", (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -397,10 +433,11 @@ router.get('/operadores', requireAuth, requireAdmin, (req, res) => {
 
 // POST /api/usuarios — crear usuario
 router.post('/usuarios', requireAuth, requireAdmin, (req, res) => {
-  const { nombre, username, password, rol } = req.body;
+  const { nombre, username, password, rol, tipo_area } = req.body;
   if (!username || !username.trim()) return res.status(400).json({ error: 'El username es requerido.' });
   if (!password) return res.status(400).json({ error: 'La contraseña es requerida.' });
   if (!rol || !['admin', 'operador'].includes(rol)) return res.status(400).json({ error: 'El rol debe ser admin u operador.' });
+  const tipoAreaVal = tipo_area && ['facturacion', 'muestra'].includes(tipo_area) ? tipo_area : null;
 
   db.get('SELECT id FROM usuarios WHERE username = ?', [username.trim()], (err, existing) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -409,11 +446,11 @@ router.post('/usuarios', requireAuth, requireAdmin, (req, res) => {
     bcrypt.hash(password, 10, (err, hash) => {
       if (err) return res.status(500).json({ error: 'Error al procesar la contraseña.' });
       db.run(
-        'INSERT INTO usuarios (username, password, rol, nombre) VALUES (?, ?, ?, ?)',
-        [username.trim(), hash, rol, nombre ? nombre.trim() : ''],
+        'INSERT INTO usuarios (username, password, rol, nombre, tipo_area) VALUES (?, ?, ?, ?, ?)',
+        [username.trim(), hash, rol, nombre ? nombre.trim() : '', tipoAreaVal],
         function (err) {
           if (err) return res.status(500).json({ error: err.message });
-          res.status(201).json({ id: this.lastID, username: username.trim(), nombre: nombre ? nombre.trim() : '', rol });
+          res.status(201).json({ id: this.lastID, username: username.trim(), nombre: nombre ? nombre.trim() : '', rol, tipo_area: tipoAreaVal });
         }
       );
     });
@@ -423,17 +460,18 @@ router.post('/usuarios', requireAuth, requireAdmin, (req, res) => {
 // PUT /api/usuarios/:id — editar nombre, username y rol
 router.put('/usuarios/:id', requireAuth, requireAdmin, (req, res) => {
   const { id } = req.params;
-  const { nombre, username, rol } = req.body;
+  const { nombre, username, rol, tipo_area } = req.body;
   if (!username || !username.trim()) return res.status(400).json({ error: 'El username es requerido.' });
   if (!rol || !['admin', 'operador'].includes(rol)) return res.status(400).json({ error: 'El rol debe ser admin u operador.' });
+  const tipoAreaVal = tipo_area && ['facturacion', 'muestra'].includes(tipo_area) ? tipo_area : null;
 
   db.get('SELECT id FROM usuarios WHERE username = ? AND id != ?', [username.trim(), id], (err, existing) => {
     if (err) return res.status(500).json({ error: err.message });
     if (existing) return res.status(409).json({ error: 'El username ya está en uso por otro usuario.' });
 
     db.run(
-      'UPDATE usuarios SET nombre = ?, username = ?, rol = ? WHERE id = ?',
-      [nombre ? nombre.trim() : '', username.trim(), rol, id],
+      'UPDATE usuarios SET nombre = ?, username = ?, rol = ?, tipo_area = ? WHERE id = ?',
+      [nombre ? nombre.trim() : '', username.trim(), rol, tipoAreaVal, id],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
         if (this.changes === 0) return res.status(404).json({ error: 'Usuario no encontrado.' });
@@ -755,14 +793,15 @@ router.get('/tipos-kiosco', (req, res) => {
 
 // POST /api/tipos-kiosco — crear tipo (admin)
 router.post('/tipos-kiosco', requireAuth, requireAdmin, (req, res) => {
-  const { nombre, color, orden } = req.body;
+  const { nombre, color, orden, prefijo } = req.body;
   if (!nombre || !nombre.trim()) return res.status(400).json({ error: 'El nombre es requerido.' });
   const colorVal = color || '#FF8500';
   const ordenVal = orden || 0;
+  const prefijoVal = prefijo ? prefijo.trim().toUpperCase() : null;
 
   db.run(
-    'INSERT INTO tipos_kiosco (nombre, color, orden) VALUES (?, ?, ?)',
-    [nombre.trim(), colorVal, ordenVal],
+    'INSERT INTO tipos_kiosco (nombre, color, orden, prefijo) VALUES (?, ?, ?, ?)',
+    [nombre.trim(), colorVal, ordenVal, prefijoVal],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       db.get('SELECT * FROM tipos_kiosco WHERE id = ?', [this.lastID], (err, row) => {
@@ -776,12 +815,13 @@ router.post('/tipos-kiosco', requireAuth, requireAdmin, (req, res) => {
 // PUT /api/tipos-kiosco/:id — actualizar tipo (admin)
 router.put('/tipos-kiosco/:id', requireAuth, requireAdmin, (req, res) => {
   const { id } = req.params;
-  const { nombre, color, orden, activo } = req.body;
+  const { nombre, color, orden, activo, prefijo } = req.body;
   if (!nombre || !nombre.trim()) return res.status(400).json({ error: 'El nombre es requerido.' });
+  const prefijoVal = prefijo ? prefijo.trim().toUpperCase() : null;
 
   db.run(
-    'UPDATE tipos_kiosco SET nombre = ?, color = ?, orden = ?, activo = ? WHERE id = ?',
-    [nombre.trim(), color || '#FF8500', orden || 0, activo !== undefined ? (activo ? 1 : 0) : 1, id],
+    'UPDATE tipos_kiosco SET nombre = ?, color = ?, orden = ?, activo = ?, prefijo = ? WHERE id = ?',
+    [nombre.trim(), color || '#FF8500', orden || 0, activo !== undefined ? (activo ? 1 : 0) : 1, prefijoVal, id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: 'Tipo no encontrado.' });

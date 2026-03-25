@@ -194,6 +194,7 @@
     const socket = io();
     let turnos = [];
     let miSucursalId = null;
+    let miTipoArea = null; // 'facturacion', 'muestra', or null
 
     function escHtml(str) {
       return String(str || '')
@@ -404,7 +405,16 @@
         const ventanillas = await res.json();
         const sel = document.getElementById('puesto-sel');
         if (ventanillas.length > 0) {
-          sel.innerHTML = ventanillas.map(v => `<option value="${escHtml(v.nombre)}">${escHtml(v.nombre)}</option>`).join('');
+          // Filter by tipo_area: facturacion sees only Facturación puestos, muestra sees only Toma de Muestra puestos
+          let filtrados = ventanillas;
+          if (miTipoArea === 'facturacion') {
+            filtrados = ventanillas.filter(v => !v.nombre.toLowerCase().includes('toma de muestra'));
+          } else if (miTipoArea === 'muestra') {
+            filtrados = ventanillas.filter(v => v.nombre.toLowerCase().includes('toma de muestra'));
+          }
+          // fallback: show all if filtered list is empty
+          if (filtrados.length === 0) filtrados = ventanillas;
+          sel.innerHTML = filtrados.map(v => `<option value="${escHtml(v.nombre)}">${escHtml(v.nombre)}</option>`).join('');
         }
         aplicarVisibilidadColumnas();
       } catch (e) {}
@@ -417,6 +427,7 @@
           const u = await res.json();
           const el = document.getElementById('operador-nombre');
           if (el) el.textContent = u.nombre || u.username || '';
+          miTipoArea = u.tipo_area || null;
         }
       } catch (e) {}
     }
@@ -427,6 +438,7 @@
         if (meRes.ok) {
           const me = await meRes.json();
           miSucursalId = me.sucursalId || null;
+          miTipoArea = me.tipo_area || null;
           if (miSucursalId) {
             socket.emit('join_branch', { sucursal_id: miSucursalId });
           }
@@ -445,6 +457,8 @@
           const secundario = cfg.color_panel_secundario || '#e06000';
           const header = document.querySelector('header');
           if (header) header.style.background = `linear-gradient(90deg, ${primario}, ${secundario})`;
+          // Apply font family
+          if (cfg.font_family) document.body.style.fontFamily = cfg.font_family;
         }
       } catch (e) {}
     }
@@ -565,9 +579,8 @@
     setInterval(() => renderKanban(), 30000);
 
     // Inicializar
-    cargarPuestos();
-    cargarOperador();
-    cargarSucursal();
+    // Initialize: load user info first so tipo_area is set before filtering puestos
+    cargarOperador().then(() => cargarSucursal().then(() => cargarPuestos()));
     cargarTurnos();
   </script>
 </body>

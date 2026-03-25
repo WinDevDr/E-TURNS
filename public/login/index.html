@@ -184,6 +184,7 @@
         const primario = config.colorPrimario || '#FF8500';
         document.querySelector('.btn-login').style.background = `linear-gradient(90deg, ${primario}, ${primario}cc)`;
         document.body.style.background = `linear-gradient(135deg, ${primario} 0%, ${primario}cc 100%)`;
+        if (config.font_family) document.body.style.fontFamily = config.font_family;
       })
       .catch(() => {});
 

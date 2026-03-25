@@ -6,9 +6,8 @@ let autoCloseTimer = null;
 
 const STORAGE_KEY = 'eturn_kiosco_sucursal';
 
-// ===== BRANCH SELECTION =====
+// ===== BRANCH CHECK — redirect to select page if no branch =====
 async function iniciarKiosco() {
-  // Check localStorage for saved branch
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
@@ -24,70 +23,19 @@ async function iniciarKiosco() {
   }
 
   if (!sucursalKiosco) {
-    // Show branch selection overlay
-    await mostrarSelectorSucursal();
-  } else {
-    socket.emit('join_branch', { sucursal_id: sucursalKiosco });
-    await cargarConfig();
-    await cargarTipos();
+    // Redirect to dedicated branch selection page
+    window.location.href = '/kiosco-select';
+    return;
   }
-}
 
-async function mostrarSelectorSucursal() {
-  try {
-    const res = await fetch('/api/sucursales/public');
-    const sucursales = await res.json();
-    const sel = document.getElementById('branch-select');
-    sel.innerHTML = '<option value="">-- Seleccione una sucursal --</option>';
-
-    if (sucursales.length === 1) {
-      // Auto-assign if only one
-      const s = sucursales[0];
-      sucursalKiosco = s.id;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ id: s.id, nombre: s.nombre }));
-      const tag = document.getElementById('sucursal-tag');
-      if (tag) tag.textContent = 'Sucursal: ' + s.nombre + ' (cambiar)';
-      socket.emit('join_branch', { sucursal_id: sucursalKiosco });
-      await cargarConfig();
-      await cargarTipos();
-      return;
-    }
-
-    sucursales.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = s.nombre;
-      sel.appendChild(opt);
-    });
-    sel.size = Math.min(sucursales.length + 1, 7);
-    document.getElementById('branch-overlay').classList.add('active');
-  } catch (e) {
-    console.error('Error al cargar sucursales:', e);
-    // Proceed without branch
-    await cargarConfig();
-    await cargarTipos();
-  }
-}
-
-function confirmarSucursalKiosco() {
-  const sel = document.getElementById('branch-select');
-  const id = parseInt(sel.value);
-  if (!id) { alert('Por favor seleccione una sucursal.'); return; }
-  const nombre = sel.options[sel.selectedIndex].textContent;
-  sucursalKiosco = id;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, nombre }));
-  document.getElementById('branch-overlay').classList.remove('active');
-  const tag = document.getElementById('sucursal-tag');
-  if (tag) tag.textContent = 'Sucursal: ' + nombre + ' (cambiar)';
   socket.emit('join_branch', { sucursal_id: sucursalKiosco });
-  cargarConfig();
-  cargarTipos();
+  await cargarConfig();
+  await cargarTipos();
 }
 
 function cambiarSucursal() {
   localStorage.removeItem(STORAGE_KEY);
-  sucursalKiosco = null;
-  mostrarSelectorSucursal();
+  window.location.href = '/kiosco-select';
 }
 
 // ===== CONFIG =====
@@ -109,6 +57,11 @@ async function cargarConfig() {
 
     const bg = config.color_kiosco_fondo || '#f5f5f5';
     document.body.style.background = bg;
+
+    // Apply font family
+    if (config.font_family) {
+      document.body.style.fontFamily = config.font_family;
+    }
   } catch (e) {
     console.error('Error al cargar config:', e);
   }

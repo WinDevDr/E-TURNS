@@ -210,6 +210,21 @@
             </select>
           </div>
           <div class="form-group">
+            <label>🔤 Fuente de Texto (todas las páginas)</label>
+            <select id="conf-font_family">
+              <option value="'Segoe UI', Arial, sans-serif">Segoe UI (por defecto)</option>
+              <option value="Arial, Helvetica, sans-serif">Arial</option>
+              <option value="'Times New Roman', Times, serif">Times New Roman</option>
+              <option value="'Courier New', Courier, monospace">Courier New</option>
+              <option value="Georgia, 'Times New Roman', serif">Georgia</option>
+              <option value="Verdana, Geneva, Tahoma, sans-serif">Verdana</option>
+              <option value="Tahoma, Geneva, Verdana, sans-serif">Tahoma</option>
+              <option value="'Trebuchet MS', Helvetica, sans-serif">Trebuchet MS</option>
+              <option value="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">Impact</option>
+              <option value="'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif">Gill Sans</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>Voz para Anuncios de Turnos (TTS)</label>
             <select id="conf-voz_tts">
               <option value="">— Voz por defecto del sistema —</option>
@@ -351,9 +366,14 @@
         <h2>📋 Tipos de Atención del Kiosco</h2>
         <small style="color:#888;display:block;margin-bottom:1.25rem">Agregue, edite el color y elimine las opciones que verán los pacientes en el kiosco de autoatención.</small>
         <form id="form-nuevo-tipo" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.25rem">
-          <div class="form-group" style="flex:1;min-width:180px;margin:0">
+          <div class="form-group" style="flex:1;min-width:160px;margin:0">
             <label>Nombre del tipo</label>
             <input type="text" id="nuevo-tipo-nombre" placeholder="Ej: Consulta General" required>
+          </div>
+          <div class="form-group" style="margin:0;min-width:80px">
+            <label>Prefijo</label>
+            <input type="text" id="nuevo-tipo-prefijo" placeholder="Ej: C" maxlength="3"
+              style="width:70px;text-transform:uppercase">
           </div>
           <div class="form-group" style="margin:0">
             <label>Color</label>
@@ -450,6 +470,14 @@
                 <option value="admin">Administrador</option>
               </select>
             </div>
+          </div>
+          <div class="form-group">
+            <label>Área de Atención (para operadores)</label>
+            <select id="usuario-tipo_area">
+              <option value="">— Sin restricción (acceso completo) —</option>
+              <option value="facturacion">Facturación (solo puestos de Facturación)</option>
+              <option value="muestra">Toma de Muestra (solo puestos de Toma de Muestra)</option>
+            </select>
           </div>
           <button type="submit" class="btn btn-primary">➕ Agregar Usuario</button>
         </form>
@@ -558,6 +586,14 @@
         <select id="editar-usuario-rol">
           <option value="operador">Operador</option>
           <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Área de Atención</label>
+        <select id="editar-usuario-tipo_area">
+          <option value="">— Sin restricción —</option>
+          <option value="facturacion">Facturación</option>
+          <option value="muestra">Toma de Muestra</option>
         </select>
       </div>
       <div class="modal-actions">
@@ -710,6 +746,13 @@
           else window.addEventListener('vozesListas', setVoice, { once: true });
         }
         if (config.mensaje) document.getElementById('conf-mensaje').value = config.mensaje;
+        if (config.font_family) {
+          const fontSel = document.getElementById('conf-font_family');
+          // Try to match existing option; if not found, keep default
+          const opts = Array.from(fontSel.options);
+          const match = opts.find(o => o.value === config.font_family);
+          if (match) fontSel.value = config.font_family;
+        }
         const preview = document.getElementById('logo-preview-sistema');
         const logoUrl = config.logo_url || config.logo;
         if (logoUrl) {
@@ -729,7 +772,8 @@
         videoYoutube: document.getElementById('conf-videoYoutube').value,
         video_size: document.getElementById('conf-video_size').value,
         voz_tts: document.getElementById('conf-voz_tts').value,
-        mensaje: document.getElementById('conf-mensaje').value
+        mensaje: document.getElementById('conf-mensaje').value,
+        font_family: document.getElementById('conf-font_family').value
       };
       try {
         const res = await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
@@ -802,20 +846,26 @@
           <table style="width:100%;border-collapse:collapse">
             <thead>
               <tr style="background:#f8f9fa">
-                <th style="padding:0.6rem 1rem;text-align:left;font-size:0.85rem;color:#555">Nombre</th>
-                <th style="padding:0.6rem 1rem;text-align:left;font-size:0.85rem;color:#555">Color</th>
-                <th style="padding:0.6rem 1rem;text-align:left;font-size:0.85rem;color:#555">Orden</th>
-                <th style="padding:0.6rem 1rem;text-align:left;font-size:0.85rem;color:#555">Acciones</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-size:0.85rem;color:#555">Nombre</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-size:0.85rem;color:#555">Prefijo</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-size:0.85rem;color:#555">Color</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-size:0.85rem;color:#555">Orden</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-size:0.85rem;color:#555">Acciones</th>
               </tr>
             </thead>
             <tbody>
               ${tipos.map((t, i) => `
                 <tr style="border-bottom:1px solid #f0f0f0" id="tipo-row-${t.id}">
-                  <td style="padding:0.6rem 1rem">
+                  <td style="padding:0.5rem 0.75rem">
                     <input type="text" value="${escHtml(t.nombre)}" id="tipo-nombre-${t.id}"
-                      style="border:1px solid #dee2e6;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.9rem;width:100%">
+                      style="border:1px solid #dee2e6;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.9rem;width:100%;min-width:130px">
                   </td>
-                  <td style="padding:0.6rem 1rem">
+                  <td style="padding:0.5rem 0.75rem">
+                    <input type="text" value="${escHtml(t.prefijo || '')}" id="tipo-prefijo-${t.id}"
+                      maxlength="3" placeholder="Ej: A"
+                      style="width:52px;border:1px solid #dee2e6;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.9rem;text-transform:uppercase;font-weight:700">
+                  </td>
+                  <td style="padding:0.5rem 0.75rem">
                     <div style="display:flex;gap:0.4rem;align-items:center">
                       <input type="color" value="${escHtml(t.color)}" id="tipo-color-picker-${t.id}"
                         oninput="document.getElementById('tipo-color-${t.id}').value=this.value"
@@ -825,11 +875,11 @@
                         style="width:80px;border:1px solid #dee2e6;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.9rem">
                     </div>
                   </td>
-                  <td style="padding:0.6rem 1rem">
+                  <td style="padding:0.5rem 0.75rem">
                     <input type="number" value="${t.orden}" id="tipo-orden-${t.id}" min="0"
                       style="width:60px;border:1px solid #dee2e6;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.9rem">
                   </td>
-                  <td style="padding:0.6rem 1rem">
+                  <td style="padding:0.5rem 0.75rem">
                     <button class="btn btn-primary" style="margin-right:0.3rem;padding:0.3rem 0.7rem;font-size:0.8rem;width:auto"
                       onclick="guardarTipoKiosco(${t.id})">💾</button>
                     <button class="btn btn-cancelar" style="padding:0.3rem 0.7rem;font-size:0.8rem;width:auto"
@@ -849,12 +899,13 @@
       const nombre = document.getElementById(`tipo-nombre-${id}`).value.trim();
       const color = document.getElementById(`tipo-color-${id}`).value;
       const orden = parseInt(document.getElementById(`tipo-orden-${id}`).value) || 0;
+      const prefijo = document.getElementById(`tipo-prefijo-${id}`).value.trim().toUpperCase();
       if (!nombre) { mostrarAlerta('El nombre es requerido.', 'error'); return; }
       try {
         const res = await fetch(`/api/tipos-kiosco/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, color, orden, activo: 1 })
+          body: JSON.stringify({ nombre, color, orden, activo: 1, prefijo })
         });
         if (!res.ok) { const e = await res.json(); mostrarAlerta(e.error || 'Error.', 'error'); return; }
         mostrarAlerta('Tipo actualizado correctamente.', 'success');
@@ -877,6 +928,7 @@
       e.preventDefault();
       const nombre = document.getElementById('nuevo-tipo-nombre').value.trim();
       const color = document.getElementById('nuevo-tipo-color').value;
+      const prefijo = document.getElementById('nuevo-tipo-prefijo').value.trim().toUpperCase();
       if (!nombre) return;
       const tipos = document.querySelectorAll('[id^="tipo-row-"]');
       const orden = tipos.length + 1;
@@ -884,10 +936,11 @@
         const res = await fetch('/api/tipos-kiosco', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, color, orden })
+          body: JSON.stringify({ nombre, color, orden, prefijo })
         });
         if (!res.ok) { const e = await res.json(); mostrarAlerta(e.error || 'Error.', 'error'); return; }
         document.getElementById('nuevo-tipo-nombre').value = '';
+        document.getElementById('nuevo-tipo-prefijo').value = '';
         document.getElementById('nuevo-tipo-color').value = '#FF8500';
         document.getElementById('nuevo-tipo-color-picker').value = '#FF8500';
         mostrarAlerta('Tipo agregado al kiosco.', 'success');
@@ -1355,14 +1408,19 @@
           const rolBadge = u.rol === 'admin'
             ? '<span style="background:#0d6efd;color:#fff;border-radius:6px;padding:0.15rem 0.5rem;font-size:0.8rem;font-weight:700">Admin</span>'
             : '<span style="background:#198754;color:#fff;border-radius:6px;padding:0.15rem 0.5rem;font-size:0.8rem;font-weight:700">Operador</span>';
+          const areaBadge = u.tipo_area === 'facturacion'
+            ? ' <span style="background:#fff3cd;color:#856404;border-radius:6px;padding:0.15rem 0.5rem;font-size:0.75rem;font-weight:700">Facturación</span>'
+            : u.tipo_area === 'muestra'
+            ? ' <span style="background:#d1e7dd;color:#0a3622;border-radius:6px;padding:0.15rem 0.5rem;font-size:0.75rem;font-weight:700">Toma de Muestra</span>'
+            : '';
           const btnEliminar = esPropioUsuario
             ? ''
             : `<button class="btn btn-danger" data-uid="${u.id}" data-unombre="${escHtml(u.nombre || u.username)}" onclick="eliminarUsuarioBtn(this)">🗑️ Eliminar</button>`;
           return `
-            <div class="ventanilla-item" id="usuario-item-${u.id}" data-uid="${u.id}" data-unombre="${escHtml(u.nombre || '')}" data-uusername="${escHtml(u.username)}" data-urol="${escHtml(u.rol)}">
+            <div class="ventanilla-item" id="usuario-item-${u.id}" data-uid="${u.id}" data-unombre="${escHtml(u.nombre || '')}" data-uusername="${escHtml(u.username)}" data-urol="${escHtml(u.rol)}" data-utipoarea="${escHtml(u.tipo_area || '')}">
               <div class="ventanilla-info">
                 <strong>${escHtml(u.nombre || u.username)}</strong>
-                <small>(${escHtml(u.username)}) &nbsp; ${rolBadge}</small>
+                <small>(${escHtml(u.username)}) &nbsp; ${rolBadge}${areaBadge}</small>
               </div>
               <div class="ventanilla-actions">
                 <button class="btn btn-secondary" onclick="abrirEditarUsuarioBtn(this)">✏️ Editar</button>
@@ -1380,12 +1438,13 @@
       const username = document.getElementById('usuario-username').value.trim();
       const password = document.getElementById('usuario-password').value;
       const rol = document.getElementById('usuario-rol').value;
+      const tipo_area = document.getElementById('usuario-tipo_area').value || null;
       if (!username) { mostrarAlerta('El username es obligatorio.', 'error'); return; }
       if (!password) { mostrarAlerta('La contraseña es obligatoria.', 'error'); return; }
       try {
         const res = await fetch('/api/usuarios', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, username, password, rol })
+          body: JSON.stringify({ nombre, username, password, rol, tipo_area })
         });
         const result = await res.json();
         if (!res.ok) { mostrarAlerta(result.error || 'Error al agregar usuario.', 'error'); return; }
@@ -1402,6 +1461,7 @@
       document.getElementById('editar-usuario-nombre').value = item.dataset.unombre;
       document.getElementById('editar-usuario-username').value = item.dataset.uusername;
       document.getElementById('editar-usuario-rol').value = item.dataset.urol;
+      document.getElementById('editar-usuario-tipo_area').value = item.dataset.utipoarea || '';
       document.getElementById('modal-editar-usuario').classList.add('open');
       setTimeout(() => document.getElementById('editar-usuario-nombre').focus(), 100);
     }
@@ -1410,11 +1470,12 @@
       const nombre = document.getElementById('editar-usuario-nombre').value.trim();
       const username = document.getElementById('editar-usuario-username').value.trim();
       const rol = document.getElementById('editar-usuario-rol').value;
+      const tipo_area = document.getElementById('editar-usuario-tipo_area').value || null;
       if (!username) { mostrarAlerta('El username no puede estar vacío.', 'error'); return; }
       try {
         const res = await fetch('/api/usuarios/' + usuarioEditandoId, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, username, rol })
+          body: JSON.stringify({ nombre, username, rol, tipo_area })
         });
         const result = await res.json();
         if (!res.ok) { mostrarAlerta(result.error || 'Error al editar usuario.', 'error'); return; }
