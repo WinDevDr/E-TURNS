@@ -19,95 +19,127 @@
       height: 100vh;
     }
 
-    /* ===== LEFT PANEL (60%) ===== */
+    /* ===== LEFT PANEL ===== */
     .panel-turno {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 2rem;
+      justify-content: flex-start;
+      padding: 1.5rem 2rem 1rem;
       position: relative;
       border-right: 2px solid rgba(255,255,255,0.08);
+      overflow: hidden;
     }
     .logo-wrap {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     #hospital-logo {
-      max-height: 140px;
-      max-width: 340px;
+      max-height: 80px;
+      max-width: 260px;
       object-fit: contain;
       display: none;
     }
     #hospital-nombre {
-      font-size: 2.8rem;
+      font-size: 2rem;
       font-weight: 900;
-      letter-spacing: 4px;
+      letter-spacing: 3px;
       text-transform: uppercase;
     }
+
+    /* Turno en llamada (animación) */
+    .turno-llamada-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0.5rem 0 0.5rem;
+    }
     .turno-etiqueta {
-      font-size: 1rem;
+      font-size: 0.85rem;
       color: #adb5bd;
       text-transform: uppercase;
       letter-spacing: 4px;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
     }
     .turno-numero {
-      font-size: 13rem;
+      font-size: 9rem;
       font-weight: 900;
       line-height: 1;
-      color: #0dcaf0;
-      text-shadow: 0 0 60px rgba(13,202,240,0.5);
+      color: #FF8500;
+      text-shadow: 0 0 60px rgba(255,133,0,0.55);
       transition: all 0.3s;
     }
     .turno-numero.sin-turno {
-      font-size: 5rem;
+      font-size: 4rem;
       color: #333;
       font-style: italic;
       text-shadow: none;
     }
     .turno-area {
-      font-size: 1.8rem;
+      font-size: 1.4rem;
       color: #adb5bd;
+      margin-top: 0.25rem;
+    }
+    .turno-puesto {
       margin-top: 0.5rem;
-    }
-    .turno-ventanilla {
-      margin-top: 0.75rem;
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       font-weight: 700;
-      padding: 0.4rem 1.5rem;
+      padding: 0.3rem 1.2rem;
       border-radius: 30px;
-      background: #0d6efd;
+      background: #FF8500;
+      display: none;
     }
-    .historial {
-      margin-top: 2rem;
-      width: 100%;
-      max-width: 460px;
-    }
-    .historial h4 {
-      font-size: 0.75rem;
-      color: #555;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      margin-bottom: 0.5rem;
-    }
-    .historial-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.4rem 0;
-      border-bottom: 1px solid #1e1e3a;
-      color: #6c757d;
-      font-size: 0.9rem;
+
+    @keyframes llamada-entrada {
+      0%   { transform: scale(0.5); opacity: 0; }
+      60%  { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
     }
     @keyframes parpadeo {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+      50% { opacity: 0.25; }
     }
-    .nuevo-turno { animation: parpadeo 0.7s ease 4; }
+    .animando {
+      animation: llamada-entrada 0.45s ease-out, parpadeo 0.65s ease 0.5s 4;
+    }
 
-    /* ===== RIGHT PANEL (40%) ===== */
+    /* ===== LISTA DE TURNOS LLAMADOS ===== */
+    .turnos-lista-wrap {
+      width: 100%;
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 0.5rem;
+    }
+    .turnos-lista-titulo {
+      font-size: 0.7rem;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 0.4rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid #1e1e3a;
+    }
+    .turno-lista-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #1a1a30;
+      font-size: 0.95rem;
+    }
+    .turno-lista-item:first-child {
+      color: #FF8500;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .tli-numero { font-weight: 700; min-width: 60px; }
+    .tli-puesto { color: #adb5bd; font-size: 0.85rem; text-align: right; }
+
+    /* ===== RIGHT PANEL ===== */
     .panel-media {
       display: flex;
       flex-direction: column;
@@ -125,7 +157,7 @@
       font-size: 2rem;
       font-weight: 900;
       font-family: monospace;
-      color: #0dcaf0;
+      color: #FF8500;
     }
     #fecha-display {
       font-size: 0.9rem;
@@ -165,36 +197,38 @@
       color: #adb5bd;
       padding-left: 100%;
     }
-    .ticker-content .sep { margin: 0 2rem; color: #0d6efd; }
+    .ticker-content .sep { margin: 0 2rem; color: #FF8500; }
     @keyframes ticker-scroll {
       0%   { transform: translateX(0); }
       100% { transform: translateX(-100%); }
     }
-    #turno-ventanilla-style {}
   </style>
 </head>
 <body>
   <style id="dynamic-styles"></style>
 
   <div class="screen">
-    <!-- LEFT: Turno en atención -->
+    <!-- LEFT -->
     <div class="panel-turno">
       <div class="logo-wrap">
         <img id="hospital-logo" src="" alt="Logo">
         <span id="hospital-nombre">E-TURNS</span>
       </div>
-      <div class="turno-etiqueta">Turno en atención</div>
-      <div class="turno-numero sin-turno" id="turno-numero">---</div>
-      <div class="turno-area" id="turno-area"></div>
-      <div class="turno-ventanilla" id="turno-ventanilla" style="display:none"></div>
 
-      <div class="historial">
-        <h4>Últimos turnos llamados</h4>
-        <div id="historial-list"></div>
+      <div class="turno-llamada-wrap">
+        <div class="turno-etiqueta">Turno en atención</div>
+        <div class="turno-numero sin-turno" id="turno-numero">---</div>
+        <div class="turno-area" id="turno-area"></div>
+        <div class="turno-puesto" id="turno-puesto"></div>
+      </div>
+
+      <div class="turnos-lista-wrap">
+        <div class="turnos-lista-titulo">Turnos llamados hoy</div>
+        <div id="turnos-lista"></div>
       </div>
     </div>
 
-    <!-- RIGHT: Media + info -->
+    <!-- RIGHT -->
     <div class="panel-media">
       <div class="media-clock">
         <div id="reloj">--:--:--</div>
@@ -221,7 +255,9 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    let historial = [];
+    // Lista de todos los turnos llamados (los más recientes al inicio)
+    let turnosLlamados = [];
+    const MAX_LISTA = 30;
 
     // Reloj + fecha
     function actualizarReloj() {
@@ -240,14 +276,11 @@
         const res = await fetch('/api/config');
         const config = await res.json();
 
-        // Guardar sucursal_id de la pantalla para unirse a sala de socket
         window._sucursalPantalla = config.kiosco_sucursal_id || null;
 
-        // Nombre del hospital
         const nombre = config.nombre || 'E-TURNS';
         document.getElementById('ticker-nombre').textContent = nombre;
 
-        // Logo grande y centrado
         const logoUrl = config.logo_url || config.logo;
         if (logoUrl) {
           const logoEl = document.getElementById('hospital-logo');
@@ -258,23 +291,21 @@
           document.getElementById('hospital-nombre').textContent = nombre;
         }
 
-        // Color de fondo pantalla
         if (config.color_fondo_pantalla) {
           document.body.style.background = config.color_fondo_pantalla;
           document.querySelector('.panel-media').style.background = adjustColor(config.color_fondo_pantalla, -15);
         }
 
-        // Colores primarios → turno número y ventanilla
         const colorPrimario = config.color_pantalla_primario || config.colorPrimario || '#FF8500';
         const colorSecundario = config.color_pantalla_secundario || config.colorSecundario || '#e06000';
         document.getElementById('dynamic-styles').textContent = `
           .turno-numero:not(.sin-turno) { color: ${colorPrimario}; text-shadow: 0 0 60px ${colorPrimario}55; }
-          .turno-ventanilla { background: ${colorSecundario}; }
+          .turno-puesto { background: ${colorSecundario}; }
           .ticker-content .sep { color: ${colorSecundario}; }
           #reloj { color: ${colorPrimario}; }
+          .turno-lista-item:first-child { color: ${colorPrimario}; }
         `;
 
-        // Video
         if (config.video_fuente === 'archivo' && config.video_url) {
           const videoEl = document.getElementById('video-uploaded');
           videoEl.src = config.video_url;
@@ -286,24 +317,18 @@
           frame.style.display = 'block';
         }
 
-        // Mensaje ticker
         if (config.mensaje) {
           document.getElementById('ticker-mensaje').textContent = config.mensaje;
         }
 
-        // Horario
         if (config.horario_apertura || config.horario_cierre) {
           const ap = config.horario_apertura || '07:00';
           const ci = config.horario_cierre || '17:00';
           document.getElementById('ticker-horario').textContent = `Horario de atención: ${ap} – ${ci}`;
         }
 
-        // Velocidad ticker (más lento si texto largo)
         ajustarVelocidadTicker();
-
-        // TTS
         if (config.voz_tts) window._vozTts = config.voz_tts;
-
       } catch (e) { console.warn('Error al cargar config:', e); }
     }
 
@@ -328,52 +353,58 @@
       ticker.style.animationDuration = dur + 's';
     }
 
-    // Mostrar turno
-    function mostrarTurno(turno) {
-      const numEl = document.getElementById('turno-numero');
-      numEl.classList.remove('sin-turno', 'nuevo-turno');
-      numEl.textContent = turno.numero;
-      void numEl.offsetWidth;
-      numEl.classList.add('nuevo-turno');
-
-      document.getElementById('turno-area').textContent = turno.area || '';
-      const ventEl = document.getElementById('turno-ventanilla');
-      if (turno.ventanilla) {
-        ventEl.textContent = turno.ventanilla;
-        ventEl.style.display = 'block';
-      } else {
-        ventEl.style.display = 'none';
-      }
-
-      historial.unshift(turno);
-      if (historial.length > 5) historial.pop();
-      renderHistorial();
-      anunciarVoz(turno);
-    }
-
-    function renderHistorial() {
-      const el = document.getElementById('historial-list');
-      el.innerHTML = historial.slice(1).map(t => `
-        <div class="historial-item">
-          <span>${escHtml(t.numero)}</span>
-          <span>${escHtml(t.area)}</span>
-          <span style="color:#495057;font-size:0.8rem">${escHtml(t.ventanilla || '')}</span>
-        </div>
-      `).join('');
-    }
-
     function escHtml(s) {
       return String(s || '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
         .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
+    // Mostrar turno con animación + agregar a lista
+    function mostrarTurno(turno) {
+      const numEl = document.getElementById('turno-numero');
+      numEl.classList.remove('sin-turno', 'animando');
+      numEl.textContent = turno.numero;
+      void numEl.offsetWidth; // force reflow
+      numEl.classList.add('animando');
+
+      // Determine display area
+      const area = turno.area || '';
+      document.getElementById('turno-area').textContent = area;
+
+      const puestoEl = document.getElementById('turno-puesto');
+      if (turno.ventanilla) {
+        puestoEl.textContent = 'Puesto: ' + turno.ventanilla;
+        puestoEl.style.display = 'block';
+      } else {
+        puestoEl.style.display = 'none';
+      }
+
+      // Add to called turns list (most recent first)
+      const existing = turnosLlamados.findIndex(t => t.numero === turno.numero && t.ventanilla === turno.ventanilla);
+      if (existing !== -1) turnosLlamados.splice(existing, 1);
+      turnosLlamados.unshift(turno);
+      if (turnosLlamados.length > MAX_LISTA) turnosLlamados.pop();
+
+      renderTurnosLlamados();
+      anunciarVoz(turno);
+    }
+
+    function renderTurnosLlamados() {
+      const el = document.getElementById('turnos-lista');
+      el.innerHTML = turnosLlamados.map((t, i) => `
+        <div class="turno-lista-item">
+          <span class="tli-numero">Turno: ${escHtml(t.numero)}</span>
+          <span class="tli-puesto">${t.ventanilla ? 'Puesto: ' + escHtml(t.ventanilla) : escHtml(t.area || '')}</span>
+        </div>
+      `).join('');
+    }
+
     // TTS
     function anunciarVoz(turno) {
       if (!window.speechSynthesis) return;
       const msg = new SpeechSynthesisUtterance();
-      const vent = turno.ventanilla ? `, diríjase a ${turno.ventanilla}` : '';
-      msg.text = `Turno ${turno.numero}, área ${turno.area}${vent}`;
+      const vent = turno.ventanilla ? `, diríjase al puesto ${turno.ventanilla}` : '';
+      msg.text = `Turno ${turno.numero}, ${turno.area || ''}${vent}`;
       msg.rate = 0.9; msg.volume = 1;
       const vozNombre = window._vozTts || null;
       const voices = window.speechSynthesis.getVoices();
@@ -386,7 +417,6 @@
 
     socket.on('turn_called', mostrarTurno);
     cargarConfig().then(() => {
-      // Unirse a la sala de la sucursal configurada para esta pantalla
       const sucursalId = window._sucursalPantalla;
       if (sucursalId) {
         socket.emit('join_branch', { sucursal_id: sucursalId });

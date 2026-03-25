@@ -1,17 +1,102 @@
 const socket = io();
 let turnoActual = null;
 let configSistema = {};
-let sucursalKiosco = null; // sucursal_id configurado para este kiosco
+let sucursalKiosco = null;
 let autoCloseTimer = null;
 
-// Cargar configuración del hospital
+const STORAGE_KEY = 'eturn_kiosco_sucursal';
+
+// ===== BRANCH SELECTION =====
+async function iniciarKiosco() {
+  // Check localStorage for saved branch
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed && Number.isInteger(Number(parsed.id)) && Number(parsed.id) > 0 && typeof parsed.nombre === 'string') {
+        sucursalKiosco = parseInt(parsed.id, 10);
+        const tag = document.getElementById('sucursal-tag');
+        if (tag) tag.textContent = 'Sucursal: ' + parsed.nombre + ' (cambiar)';
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch (e) { localStorage.removeItem(STORAGE_KEY); }
+  }
+
+  if (!sucursalKiosco) {
+    // Show branch selection overlay
+    await mostrarSelectorSucursal();
+  } else {
+    socket.emit('join_branch', { sucursal_id: sucursalKiosco });
+    await cargarConfig();
+    await cargarTipos();
+  }
+}
+
+async function mostrarSelectorSucursal() {
+  try {
+    const res = await fetch('/api/sucursales/public');
+    const sucursales = await res.json();
+    const sel = document.getElementById('branch-select');
+    sel.innerHTML = '<option value="">-- Seleccione una sucursal --</option>';
+
+    if (sucursales.length === 1) {
+      // Auto-assign if only one
+      const s = sucursales[0];
+      sucursalKiosco = s.id;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ id: s.id, nombre: s.nombre }));
+      const tag = document.getElementById('sucursal-tag');
+      if (tag) tag.textContent = 'Sucursal: ' + s.nombre + ' (cambiar)';
+      socket.emit('join_branch', { sucursal_id: sucursalKiosco });
+      await cargarConfig();
+      await cargarTipos();
+      return;
+    }
+
+    sucursales.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.nombre;
+      sel.appendChild(opt);
+    });
+    sel.size = Math.min(sucursales.length + 1, 7);
+    document.getElementById('branch-overlay').classList.add('active');
+  } catch (e) {
+    console.error('Error al cargar sucursales:', e);
+    // Proceed without branch
+    await cargarConfig();
+    await cargarTipos();
+  }
+}
+
+function confirmarSucursalKiosco() {
+  const sel = document.getElementById('branch-select');
+  const id = parseInt(sel.value);
+  if (!id) { alert('Por favor seleccione una sucursal.'); return; }
+  const nombre = sel.options[sel.selectedIndex].textContent;
+  sucursalKiosco = id;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, nombre }));
+  document.getElementById('branch-overlay').classList.remove('active');
+  const tag = document.getElementById('sucursal-tag');
+  if (tag) tag.textContent = 'Sucursal: ' + nombre + ' (cambiar)';
+  socket.emit('join_branch', { sucursal_id: sucursalKiosco });
+  cargarConfig();
+  cargarTipos();
+}
+
+function cambiarSucursal() {
+  localStorage.removeItem(STORAGE_KEY);
+  sucursalKiosco = null;
+  mostrarSelectorSucursal();
+}
+
+// ===== CONFIG =====
 async function cargarConfig() {
   try {
     const res = await fetch('/api/config');
     const config = await res.json();
     configSistema = config;
 
-    // Nombre del hospital (solo si no hay logo)
     const logoUrl = config.logo_url || config.logo;
     if (logoUrl) {
       const logo = document.getElementById('hospital-logo');
@@ -22,22 +107,14 @@ async function cargarConfig() {
       document.getElementById('hospital-nombre').textContent = config.nombre;
     }
 
-    // Aplicar color de fondo del kiosco
     const bg = config.color_kiosco_fondo || '#f5f5f5';
     document.body.style.background = bg;
-
-    // Sucursal del kiosco (configurada en admin)
-    if (config.kiosco_sucursal_id) {
-      sucursalKiosco = config.kiosco_sucursal_id;
-      // Unirse a sala de socket por sucursal
-      socket.emit('join_branch', { sucursal_id: sucursalKiosco });
-    }
   } catch (e) {
     console.error('Error al cargar config:', e);
   }
 }
 
-// Cargar tipos de atención dinámicamente
+// ===== TIPOS =====
 async function cargarTipos() {
   try {
     const res = await fetch('/api/tipos-kiosco');
@@ -49,7 +126,6 @@ async function cargarTipos() {
       const btn = document.createElement('button');
       btn.className = 'tipo-btn';
       btn.style.background = t.color || '#FF8500';
-      // Detectar si el color es muy claro para usar texto oscuro
       const brightness = hexBrightness(t.color || '#FF8500');
       btn.style.color = brightness > 160 ? '#333' : '#fff';
       btn.textContent = t.nombre;
@@ -57,7 +133,6 @@ async function cargarTipos() {
       grid.appendChild(btn);
     });
 
-    // Botón de turno preferencial siempre al final
     const prefBtn = document.createElement('button');
     prefBtn.className = 'tipo-btn pref-btn';
     prefBtn.style.background = '#ffc107';
@@ -71,6 +146,7 @@ async function cargarTipos() {
 }
 
 function hexBrightness(hex) {
+  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return 128;
   const c = hex.replace('#', '');
   const r = parseInt(c.substring(0, 2), 16);
   const g = parseInt(c.substring(2, 4), 16);
@@ -78,7 +154,6 @@ function hexBrightness(hex) {
   return (r * 299 + g * 587 + b * 114) / 1000;
 }
 
-// Abrir modal preferencial con tipos cargados dinámicamente
 function abrirModalPreferencial(tipos) {
   const grid = document.getElementById('modal-pref-grid');
   grid.innerHTML = '';
@@ -95,12 +170,10 @@ function abrirModalPreferencial(tipos) {
   document.getElementById('modal-preferencial').classList.add('active');
 }
 
-// Solicitar turno normal
 async function solicitarTurno(tipo) {
   await _crearTurno(tipo, 'Facturación', 0);
 }
 
-// Solicitar turno preferencial
 async function solicitarTurnoPref(tipo) {
   cerrarModalPreferencial();
   await _crearTurno(tipo, 'Facturación', 1);
@@ -126,7 +199,6 @@ async function _crearTurno(tipo_paciente, area, preferencial) {
     const turno = await res.json();
     turnoActual = turno;
 
-    // Mostrar modal de ticket
     document.getElementById('ticket-numero').textContent = turno.numero;
     document.getElementById('ticket-area').textContent = turno.area;
     document.getElementById('ticket-tipo').textContent = turno.tipo_paciente ? `Tipo: ${turno.tipo_paciente}` : '';
@@ -137,17 +209,14 @@ async function _crearTurno(tipo_paciente, area, preferencial) {
 
     document.getElementById('modal-ticket').classList.add('active');
 
-    // Reiniciar barra de cuenta regresiva
     const bar = document.getElementById('countdown-bar');
     bar.style.animation = 'none';
     void bar.offsetWidth;
     bar.style.animation = 'countdown-shrink 2s linear forwards';
 
-    // Auto-cerrar en 2 segundos
     if (autoCloseTimer) clearTimeout(autoCloseTimer);
     autoCloseTimer = setTimeout(() => cerrarModal(), 2000);
 
-    // Emitir al socket de la sucursal
     socket.emit('new_turn', turno);
   } catch (e) {
     alert('Error al solicitar turno. Intente nuevamente.');
@@ -210,11 +279,7 @@ function imprimirTicket() {
     </html>
   `);
   win.document.close();
-
-  // Auto-cerrar modal después de imprimir
   autoCloseTimer = setTimeout(() => cerrarModal(), 2000);
 }
 
-// Inicializar
-cargarConfig();
-cargarTipos();
+iniciarKiosco();

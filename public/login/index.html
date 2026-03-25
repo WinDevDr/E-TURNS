@@ -101,22 +101,17 @@
     }
     /* Paso 2: selección de sucursal */
     #step-sucursal { display: none; }
-    .sucursal-btn {
-      display: block;
+    .sucursal-select-wrap { margin-bottom: 1.2rem; }
+    .sucursal-select-wrap select {
       width: 100%;
-      padding: 0.85rem 1rem;
-      margin-bottom: 0.6rem;
-      background: #fff7ee;
-      border: 2px solid #FF8500;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid #FF8500;
       border-radius: 10px;
       font-size: 1rem;
-      font-weight: 700;
-      color: #FF8500;
+      color: #333;
+      background: #fafafa;
       cursor: pointer;
-      text-align: left;
-      transition: background 0.15s;
     }
-    .sucursal-btn:hover { background: #FF8500; color: #fff; }
     .bienvenida {
       font-size: 0.95rem;
       color: #444;
@@ -151,7 +146,12 @@
     <!-- Paso 2: Selección de sucursal (aparece después del login exitoso) -->
     <div id="step-sucursal">
       <p class="bienvenida" id="bienvenida-texto">Bienvenido. Seleccione su sucursal:</p>
-      <div id="sucursal-opciones"></div>
+      <div class="sucursal-select-wrap">
+        <select id="sucursal-select" size="1">
+          <option value="">-- Seleccione una sucursal --</option>
+        </select>
+      </div>
+      <button class="btn-login" onclick="confirmarSucursal()">Acceder</button>
     </div>
 
     <div class="footer-info">
@@ -219,21 +219,22 @@
         rolPendiente = data.rol;
 
         if (data.sucursales && data.sucursales.length > 1) {
-          // Mostrar paso 2: selección de sucursal
+          // Mostrar paso 2: selección de sucursal (dropdown)
           document.getElementById('step-credenciales').style.display = 'none';
           document.getElementById('step-sucursal').style.display = 'block';
           document.getElementById('bienvenida-texto').textContent =
             `Bienvenido, ${data.nombre || data.username}. Seleccione su sucursal:`;
 
-          const opciones = document.getElementById('sucursal-opciones');
-          opciones.innerHTML = '';
+          const sel = document.getElementById('sucursal-select');
+          sel.innerHTML = '<option value="">-- Seleccione una sucursal --</option>';
           data.sucursales.forEach(s => {
-            const btn = document.createElement('button');
-            btn.className = 'sucursal-btn';
-            btn.textContent = '🏢 ' + s.nombre;
-            btn.onclick = () => seleccionarSucursal(s.id, s.nombre);
-            opciones.appendChild(btn);
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.nombre;
+            sel.appendChild(opt);
           });
+          // Si solo hay unas pocas, hacerlo más visible
+          sel.size = Math.min(data.sucursales.length + 1, 6);
         } else {
           // Sin selección de sucursal → redirigir directo
           redirigirPorRol(data.rol);
@@ -243,6 +244,18 @@
         document.getElementById('alerta-error').style.display = 'block';
       }
     });
+
+    async function confirmarSucursal() {
+      const sel = document.getElementById('sucursal-select');
+      const sucursalId = parseInt(sel.value);
+      if (!sucursalId) {
+        const alerta = document.getElementById('alerta-error');
+        alerta.textContent = 'Por favor seleccione una sucursal.';
+        alerta.style.display = 'block';
+        return;
+      }
+      await seleccionarSucursal(sucursalId, sel.options[sel.selectedIndex].textContent);
+    }
 
     async function seleccionarSucursal(sucursalId, sucursalNombre) {
       const alerta = document.getElementById('alerta-error');

@@ -34,35 +34,42 @@
       color: #555;
       margin-top: 0.25rem;
     }
-    .container { padding: 1.5rem 2rem 2rem; max-width: 1100px; margin: 0 auto; width: 100%; flex: 1; }
-    h2 { text-align: center; color: #333; margin-bottom: 1.75rem; font-size: 1.5rem; }
+    .container { padding: 1rem 2rem 2rem; max-width: 1100px; margin: 0 auto; width: 100%; flex: 1; }
+    .bienvenido { text-align: center; font-size: 2rem; font-weight: 900; color: #FF8500; margin-bottom: 0.3rem; }
+    h2 { text-align: center; color: #555; margin-bottom: 1.5rem; font-size: 1.2rem; font-weight: 500; }
     #tipos-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+    @media (max-width: 700px) {
+      #tipos-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 450px) {
+      #tipos-grid { grid-template-columns: 1fr; }
     }
     .tipo-btn {
-      padding: 2.5rem 1rem;
+      padding: 2rem 1rem;
       border: none;
       border-radius: 16px;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: 700;
       cursor: pointer;
       transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
       box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      min-height: 140px;
+      min-height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
+      text-align: center;
     }
     .tipo-btn:hover { transform: scale(1.05); opacity: 0.92; box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
     .tipo-btn:active { transform: scale(0.98); }
-    .tipo-btn.pref-btn { color: #333; }
     /* Modals */
     .modal-overlay {
       display: none;
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.65);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -77,18 +84,19 @@
       width: 95%;
       box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     }
-    .modal h3 { font-size: 1.4rem; color: #333; margin-bottom: 1.5rem; }
+    .modal h3 { font-size: 1.4rem; color: #333; margin-bottom: 1.25rem; }
     .modal .ticket-numero { font-size: 5rem; font-weight: 900; color: #FF8500; margin: 1rem 0; }
     .modal .ticket-area { font-size: 1.3rem; color: #555; margin-bottom: 0.5rem; }
     .modal .ticket-tipo { font-size: 1rem; color: #888; margin-bottom: 0.5rem; }
     .modal .ticket-hora { font-size: 1rem; color: #888; margin-bottom: 1.5rem; }
     #modal-pref-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
-    #modal-pref-grid .tipo-btn { padding: 1.5rem 0.75rem; font-size: 1rem; min-height: 90px; }
+    @media (max-width: 600px) { #modal-pref-grid { grid-template-columns: repeat(2, 1fr); } }
+    #modal-pref-grid .tipo-btn { padding: 1.25rem 0.75rem; font-size: 0.95rem; min-height: 80px; }
     .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; }
     .btn-primary { background: #FF8500; color: #fff; margin-right: 0.5rem; }
     .btn-secondary { background: #6c757d; color: #fff; }
@@ -113,20 +121,86 @@
       from { width: 100%; }
       to { width: 0%; }
     }
+    /* Branch selection overlay */
+    #branch-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    #branch-overlay.active { display: flex; }
+    .branch-modal {
+      background: #fff;
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      max-width: 460px;
+      width: 95%;
+    }
+    .branch-modal h3 { font-size: 1.5rem; font-weight: 800; color: #333; margin-bottom: 0.5rem; }
+    .branch-modal p { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .branch-modal select {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 2px solid #FF8500;
+      border-radius: 10px;
+      font-size: 1rem;
+      color: #333;
+      background: #fafafa;
+      margin-bottom: 1.25rem;
+      cursor: pointer;
+    }
+    .branch-confirm-btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: #FF8500;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .branch-confirm-btn:hover { background: #e07500; }
+    .sucursal-tag {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #aaa;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      text-decoration: underline;
+    }
     footer { text-align: center; padding: 1.5rem; color: #aaa; font-size: 0.8rem; }
   </style>
 </head>
 <body>
+
+  <!-- Branch selection overlay (shown when kiosk opens without a branch configured) -->
+  <div id="branch-overlay">
+    <div class="branch-modal">
+      <h3>Seleccione su Sucursal</h3>
+      <p>Por favor seleccione la sucursal a la que pertenece este kiosco:</p>
+      <select id="branch-select" size="1">
+        <option value="">-- Cargando sucursales... --</option>
+      </select>
+      <button class="branch-confirm-btn" onclick="confirmarSucursalKiosco()">Confirmar</button>
+    </div>
+  </div>
+
   <header>
     <img id="hospital-logo" src="" alt="Logo" style="display:none">
     <div id="hospital-nombre"></div>
   </header>
 
   <div class="container">
+    <div class="bienvenido">¡Bienvenido!</div>
     <h2>Seleccione el tipo de atención</h2>
     <div id="tipos-grid">
       <p style="color:#aaa;text-align:center;grid-column:1/-1">Cargando opciones...</p>
     </div>
+    <p class="sucursal-tag" id="sucursal-tag" onclick="cambiarSucursal()"></p>
   </div>
 
   <!-- Modal: selección de tipo para turno preferencial -->

@@ -111,7 +111,10 @@ function initDatabase() {
     db.get('SELECT COUNT(*) as count FROM ventanillas', (err, row) => {
       if (!err && row.count === 0) {
         const stmt = db.prepare('INSERT INTO ventanillas (nombre) VALUES (?)');
-        ['Ventanilla 1', 'Ventanilla 2', 'Ventanilla 3'].forEach(nombre => {
+        [
+          'Facturación Puesto 1', 'Facturación Puesto 2', 'Facturación Puesto 3',
+          'Toma de Muestra 1', 'Toma de Muestra 2', 'Toma de Muestra 3'
+        ].forEach(nombre => {
           stmt.run(nombre);
         });
         stmt.finalize();

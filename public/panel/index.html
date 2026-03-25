@@ -21,8 +21,8 @@
     header h1 { font-size: 1.4rem; font-weight: 900; }
     #operador-nombre { font-size: 0.9rem; opacity: 0.85; }
     .header-right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .ventanilla-select { display: flex; align-items: center; gap: 0.5rem; }
-    .ventanilla-select label { font-weight: 600; font-size: 0.9rem; }
+    .puesto-select { display: flex; align-items: center; gap: 0.5rem; }
+    .puesto-select label { font-weight: 600; font-size: 0.9rem; }
     select {
       padding: 0.4rem 0.75rem;
       border-radius: 8px;
@@ -57,13 +57,14 @@
       padding-bottom: 1rem;
     }
     .kanban-col {
-      flex: 0 0 280px;
+      flex: 0 0 290px;
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
     }
+    .kanban-col.hidden { display: none; }
     .col-header {
       padding: 1rem;
       color: #fff;
@@ -71,6 +72,16 @@
       border-radius: 12px 12px 0 0;
       font-weight: 700;
       font-size: 0.95rem;
+    }
+    /* Light gray for waiting columns */
+    .col-header.gray {
+      background: #adb5bd;
+      color: #fff;
+    }
+    /* Green for finalizados */
+    .col-header.green {
+      background: #198754;
+      color: #fff;
     }
     .col-body {
       padding: 0.75rem;
@@ -98,7 +109,8 @@
     }
     .badge-tipo { background: #e9ecef; color: #495057; }
     .badge-pref { background: #fff3cd; color: #856404; }
-    .turn-time { font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; }
+    .turn-time { font-size: 0.8rem; color: #888; margin-bottom: 0.25rem; }
+    .turn-hora { font-size: 0.75rem; color: #aaa; margin-bottom: 0.5rem; font-style: italic; }
     .turn-actions { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
     .btn { padding: 0.4rem 0.75rem; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; transition: opacity 0.15s; width: 100%; text-align: left; }
     .btn:hover { opacity: 0.85; }
@@ -107,6 +119,7 @@
     .btn-solo-fact { background: #FF8500; color: #fff; }
     .btn-atender { background: #FF8500; color: #fff; }
     .btn-cancelar { background: #dc3545; color: #fff; }
+    .btn-rellamar { background: #198754; color: #fff; }
     .empty-col { text-align: center; color: #bbb; padding: 2rem 1rem; font-style: italic; font-size: 0.9rem; }
     .turn-card.finalizado { opacity: 0.7; border-left-color: #6c757d; background: #f0f0f0; }
     .btn-logout { background: rgba(220,53,69,0.85); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 0.9rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
@@ -120,10 +133,10 @@
       <span id="sucursal-nombre" style="font-size:0.8rem;opacity:0.7;margin-top:0.1rem"></span>
     </div>
     <div class="header-right">
-      <div class="ventanilla-select">
-        <label>Ventanilla:</label>
-        <select id="ventanilla-sel">
-          <option value="Ventanilla 1">Ventanilla 1</option>
+      <div class="puesto-select">
+        <label>Puesto:</label>
+        <select id="puesto-sel" onchange="onPuestoChange()">
+          <option value="Facturación Puesto 1">Facturación Puesto 1</option>
         </select>
       </div>
       <form action="/auth/logout" method="POST" style="display:inline">
@@ -134,19 +147,19 @@
 
   <div class="container">
     <div class="stats-bar">
-      <div class="stat-card">
+      <div class="stat-card" id="stat-card-espera-sala">
         <div class="num" id="stat-espera-sala">0</div>
         <div class="lbl">Sala de Espera</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="stat-card-facturacion">
         <div class="num" id="stat-facturacion">0</div>
         <div class="lbl">En Facturación</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="stat-card-espera-muestra">
         <div class="num" id="stat-espera-muestra">0</div>
         <div class="lbl">Espera Muestra</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="stat-card-toma-muestra">
         <div class="num" id="stat-toma-muestra">0</div>
         <div class="lbl">En Toma Muestra</div>
       </div>
@@ -154,23 +167,23 @@
 
     <div class="kanban-board">
       <div class="kanban-col" id="col-espera-sala">
-        <div class="col-header">Sala de Espera</div>
+        <div class="col-header gray">Sala de Espera</div>
         <div class="col-body" id="cards-espera-sala"></div>
       </div>
       <div class="kanban-col" id="col-facturacion">
-        <div class="col-header" style="background:#FF8500">En Facturación</div>
+        <div class="col-header">En Facturación</div>
         <div class="col-body" id="cards-facturacion"></div>
       </div>
       <div class="kanban-col" id="col-espera-muestra">
-        <div class="col-header" style="background:#FF8500">Espera Toma de Muestra</div>
+        <div class="col-header gray">Espera Toma de Muestra</div>
         <div class="col-body" id="cards-espera-muestra"></div>
       </div>
       <div class="kanban-col" id="col-toma-muestra">
-        <div class="col-header" style="background:#FF8500">Toma de Muestra</div>
+        <div class="col-header">Toma de Muestra</div>
         <div class="col-body" id="cards-toma-muestra"></div>
       </div>
       <div class="kanban-col" id="col-finalizados">
-        <div class="col-header" style="background:#FF8500">Finalizados Hoy</div>
+        <div class="col-header green">✅ Finalizados Hoy</div>
         <div class="col-body" id="cards-finalizados"></div>
       </div>
     </div>
@@ -180,6 +193,7 @@
   <script>
     const socket = io();
     let turnos = [];
+    let miSucursalId = null;
 
     function escHtml(str) {
       return String(str || '')
@@ -197,12 +211,26 @@
       return `${mins} min esperando`;
     }
 
+    function formatTime(fechaHora) {
+      if (!fechaHora) return '';
+      const d = new Date(fechaHora);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      return `${hh}:${mm}:${ss}`;
+    }
+
     function crearCard(t) {
       const etapa = t.etapa || 'espera_sala';
       const finalizado = t.estado === 'atendido' || t.estado === 'cancelado';
       let acciones = '';
 
       if (!finalizado) {
+        // Re-call button for turns already called (in facturacion or toma_muestra)
+        const rellamarBtn = (etapa === 'facturacion' || etapa === 'toma_muestra')
+          ? `<button class="btn btn-rellamar" onclick="rellamarTurno(${t.id})">Volver a llamar</button>`
+          : '';
+
         if (etapa === 'espera_sala') {
           acciones = `
             <button class="btn btn-llamar" onclick="llamarFact(${t.id})">Llamar a Facturación</button>
@@ -210,6 +238,7 @@
           `;
         } else if (etapa === 'facturacion') {
           acciones = `
+            ${rellamarBtn}
             <button class="btn btn-pasar" onclick="pasarMuestra(${t.id})">Pasar a Toma de Muestra</button>
             <button class="btn btn-solo-fact" onclick="atenderFact(${t.id})">Solo Facturación</button>
             <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">Cancelar</button>
@@ -221,6 +250,7 @@
           `;
         } else if (etapa === 'toma_muestra') {
           acciones = `
+            ${rellamarBtn}
             <button class="btn btn-atender" onclick="atenderMuestra(${t.id})">Atendido</button>
             <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">Cancelar</button>
           `;
@@ -232,6 +262,20 @@
       const estadoBadge = finalizado
         ? `<span class="badge" style="background:${t.estado==='atendido'?'#d1e7dd;color:#0a3622':'#f8d7da;color:#842029'}">${t.estado === 'atendido' ? 'Atendido' : 'Cancelado'}</span>`
         : '';
+
+      // Hora tomada (con segundos)
+      let horaHtml = '';
+      if (!finalizado) {
+        const horaLlamado = t.fecha_llamado_facturacion || t.fecha_llamado_muestra;
+        if (horaLlamado) {
+          horaHtml = `<div class="turn-hora">Hora llamado: ${formatTime(horaLlamado)}</div>`;
+        }
+        horaHtml += `<div class="turn-time">${tiempoEspera(t.fecha_hora)}</div>`;
+      } else {
+        const fechaFin = t.fecha_atendido || t.fecha_hora;
+        horaHtml = `<div class="turn-hora">Finalizado: ${formatTime(fechaFin)}</div>`;
+      }
+
       const atendidoPorHtml = t.atendido_por_facturacion
         ? `<div class="turn-time">Fact: ${escHtml(t.atendido_por_facturacion)}</div>` : '';
       const muestraHtml = t.atendido_por_muestra
@@ -241,11 +285,60 @@
         <div class="turn-card${t.preferencial ? ' preferencial' : ''}${finalizado ? ' finalizado' : ''}" id="card-${t.id}">
           <div class="turn-num">${escHtml(t.numero)}</div>
           <div class="turn-badges">${prefBadge}${tipoBadge}${estadoBadge}</div>
-          <div class="turn-time">${finalizado ? new Date(t.fecha_atendido || t.fecha_hora).toLocaleTimeString('es-ES') : tiempoEspera(t.fecha_hora)}</div>
+          ${horaHtml}
           ${atendidoPorHtml}${muestraHtml}
           <div class="turn-actions">${acciones}</div>
         </div>
       `;
+    }
+
+    // Column visibility based on selected puesto
+    function onPuestoChange() {
+      aplicarVisibilidadColumnas();
+    }
+
+    function esPuestoMuestra(puesto) {
+      return puesto && puesto.toLowerCase().includes('toma de muestra');
+    }
+
+    function aplicarVisibilidadColumnas() {
+      const puesto = document.getElementById('puesto-sel').value;
+      const esMuestra = esPuestoMuestra(puesto);
+
+      const colEspera = document.getElementById('col-espera-sala');
+      const colFact = document.getElementById('col-facturacion');
+      const colEsperaMuestra = document.getElementById('col-espera-muestra');
+      const colTomaMuestra = document.getElementById('col-toma-muestra');
+      const colFin = document.getElementById('col-finalizados');
+
+      const statEspera = document.getElementById('stat-card-espera-sala');
+      const statFact = document.getElementById('stat-card-facturacion');
+      const statEsperaMuestra = document.getElementById('stat-card-espera-muestra');
+      const statTomaMuestra = document.getElementById('stat-card-toma-muestra');
+
+      if (esMuestra) {
+        // Toma de Muestra: show Espera Toma de Muestra, Toma de Muestra, Finalizados
+        colEspera.classList.add('hidden');
+        colFact.classList.add('hidden');
+        colEsperaMuestra.classList.remove('hidden');
+        colTomaMuestra.classList.remove('hidden');
+        colFin.classList.remove('hidden');
+        statEspera.style.display = 'none';
+        statFact.style.display = 'none';
+        statEsperaMuestra.style.display = '';
+        statTomaMuestra.style.display = '';
+      } else {
+        // Facturación: show Sala de Espera, En Facturación, Espera Toma de Muestra, Finalizados
+        colEspera.classList.remove('hidden');
+        colFact.classList.remove('hidden');
+        colEsperaMuestra.classList.remove('hidden');
+        colTomaMuestra.classList.add('hidden');
+        colFin.classList.remove('hidden');
+        statEspera.style.display = '';
+        statFact.style.display = '';
+        statEsperaMuestra.style.display = '';
+        statTomaMuestra.style.display = 'none';
+      }
     }
 
     function renderKanban() {
@@ -269,7 +362,6 @@
         if (col) col.innerHTML += crearCard(t);
       });
 
-      // Finalizados — últimos 20, más recientes primero
       const MAX_FINALIZADOS = 20;
       const finRecientes = finalizados.slice(-MAX_FINALIZADOS).reverse();
       finRecientes.forEach(t => {
@@ -300,21 +392,21 @@
       try {
         const res = await fetch('/api/turnos?incluir_cancelados=true');
         const todos = await res.json();
-        // Solo del día de hoy
         const hoy = new Date().toISOString().split('T')[0];
         turnos = todos.filter(t => t.fecha_hora && t.fecha_hora.startsWith(hoy));
         renderKanban();
       } catch (e) { console.error('Error al cargar turnos:', e); }
     }
 
-    async function cargarVentanillas() {
+    async function cargarPuestos() {
       try {
         const res = await fetch('/api/ventanillas');
         const ventanillas = await res.json();
-        const sel = document.getElementById('ventanilla-sel');
+        const sel = document.getElementById('puesto-sel');
         if (ventanillas.length > 0) {
           sel.innerHTML = ventanillas.map(v => `<option value="${escHtml(v.nombre)}">${escHtml(v.nombre)}</option>`).join('');
         }
+        aplicarVisibilidadColumnas();
       } catch (e) {}
     }
 
@@ -329,11 +421,8 @@
       } catch (e) {}
     }
 
-    let miSucursalId = null;
-
     async function cargarSucursal() {
       try {
-        // Obtener sucursal del operador autenticado
         const meRes = await fetch('/auth/me');
         if (meRes.ok) {
           const me = await meRes.json();
@@ -352,7 +441,6 @@
           const cfg = await res.json();
           const el = document.getElementById('sucursal-nombre');
           if (el && !el.textContent && cfg.nombre) el.textContent = cfg.nombre;
-          // Aplicar colores del panel al header
           const primario = cfg.color_panel_primario || '#FF8500';
           const secundario = cfg.color_panel_secundario || '#e06000';
           const header = document.querySelector('header');
@@ -361,17 +449,17 @@
       } catch (e) {}
     }
 
-    function getVentanilla() {
-      return document.getElementById('ventanilla-sel').value;
+    function getPuesto() {
+      return document.getElementById('puesto-sel').value;
     }
 
     async function llamarFact(id) {
-      const ventanilla = getVentanilla();
+      const puesto = getPuesto();
       try {
         const res = await fetch(`/api/turnos/${id}/llamar`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ventanilla })
+          body: JSON.stringify({ ventanilla: puesto })
         });
         const turno = await res.json();
         socket.emit('call_turn', turno);
@@ -382,19 +470,34 @@
     }
 
     async function llamarMuestra(id) {
-      const ventanilla = getVentanilla();
+      const puesto = getPuesto();
       try {
         const res = await fetch(`/api/turnos/${id}/llamar`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ventanilla })
+          body: JSON.stringify({ ventanilla: puesto })
         });
         const turno = await res.json();
-        socket.emit('call_turn', turno);
+        // Override display area for Toma de Muestra calls
+        const turnoDisplay = Object.assign({}, turno, { area: 'Toma de Muestra' });
+        socket.emit('call_turn', turnoDisplay);
         const idx = turnos.findIndex(t => t.id === id);
         if (idx !== -1) turnos[idx] = turno;
         renderKanban();
       } catch (e) { alert('Error al llamar turno.'); }
+    }
+
+    async function rellamarTurno(id) {
+      const puesto = getPuesto();
+      const t = turnos.find(t => t.id === id);
+      if (!t) return;
+      // Emit call_turn again with appropriate area
+      const esMuestra = t.etapa === 'toma_muestra';
+      const turnoDisplay = Object.assign({}, t, {
+        ventanilla: puesto,
+        area: esMuestra ? 'Toma de Muestra' : (t.area || 'Facturación')
+      });
+      socket.emit('call_turn', turnoDisplay);
     }
 
     async function pasarMuestra(id) {
@@ -458,11 +561,11 @@
 
     socket.on('stats_updated', cargarTurnos);
 
-    // Actualizar tiempos cada minuto
-    setInterval(() => renderKanban(), 60000);
+    // Actualizar tiempos cada 30s
+    setInterval(() => renderKanban(), 30000);
 
     // Inicializar
-    cargarVentanillas();
+    cargarPuestos();
     cargarOperador();
     cargarSucursal();
     cargarTurnos();

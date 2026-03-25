@@ -4,8 +4,8 @@ module.exports = function (io) {
 
     // Unirse a la sala de una sucursal específica
     socket.on('join_branch', (data) => {
-      if (data && data.sucursal_id) {
-        const room = `branch_${data.sucursal_id}`;
+      if (data && data.sucursal_id && Number.isInteger(Number(data.sucursal_id)) && Number(data.sucursal_id) > 0) {
+        const room = `branch_${parseInt(data.sucursal_id, 10)}`;
         socket.join(room);
         console.log(`Socket ${socket.id} se unió a sala ${room}`);
       }
