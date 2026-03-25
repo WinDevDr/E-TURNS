@@ -582,6 +582,14 @@
 
     socket.on('stats_updated', cargarTurnos);
 
+    // Re-join branch room on reconnection so turn_added / stats_updated
+    // events are not missed after a network hiccup or server restart.
+    socket.on('connect', () => {
+      if (miSucursalId) {
+        socket.emit('join_branch', { sucursal_id: miSucursalId });
+      }
+    });
+
     // Actualizar tiempos cada 30s
     setInterval(() => renderKanban(), 30000);
 

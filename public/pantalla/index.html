@@ -462,12 +462,16 @@
 
     socket.on('turn_called', mostrarTurno);
 
-    // ===== INIT =====
-    cargarConfig().then(() => {
+    // Re-join branch room on every (re)connection so turn_called events
+    // are not missed after a network hiccup or server restart.
+    socket.on('connect', () => {
       if (sucursalId) {
         socket.emit('join_branch', { sucursal_id: sucursalId });
       }
     });
+
+    // ===== INIT =====
+    cargarConfig();
   </script>
 </body>
 </html>
