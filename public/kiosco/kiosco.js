@@ -61,17 +61,14 @@ async function solicitarTurno(area) {
     const turno = await res.json();
     turnoActual = turno;
 
-    // Emitir evento al socket
-    socket.emit('new_turn', turno);
-
-    // Imprimir automáticamente al recibir el turno
-    imprimirTicket();
-
-    // Mostrar modal después de imprimir
+    // Mostrar modal
     document.getElementById('ticket-numero').textContent = turno.numero;
     document.getElementById('ticket-area').textContent = turno.area;
     document.getElementById('ticket-hora').textContent = new Date(turno.fecha_hora).toLocaleString('es-ES');
     document.getElementById('modal-ticket').classList.add('active');
+
+    // Emitir evento al socket
+    socket.emit('new_turn', turno);
   } catch (e) {
     alert('Error al solicitar turno. Intente nuevamente.');
   }
@@ -84,44 +81,19 @@ function cerrarModal() {
 
 function imprimirTicket() {
   if (!turnoActual) return;
-
-  // Crear iframe oculto para impresión silenciosa a la impresora predeterminada (80mm Thermal Printer)
-  let iframe = document.getElementById('print-frame');
-  if (!iframe) {
-    iframe = document.createElement('iframe');
-    iframe.id = 'print-frame';
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    iframe.style.visibility = 'hidden';
-    document.body.appendChild(iframe);
-  }
-
-  const doc = iframe.contentDocument || iframe.contentWindow.document;
-  doc.open();
-  doc.write(`
+  const win = window.open('', '_blank', 'width=400,height=500');
+  win.document.write(`
     <!DOCTYPE html>
     <html lang="es">
     <head>
       <meta charset="UTF-8">
-      <title>Ticket</title>
+      <title>Ticket E-TURNS</title>
       <style>
-        @page {
-          size: 80mm auto;
-          margin: 0;
-        }
-        body {
-          font-family: 'Arial', sans-serif;
-          text-align: center;
-          width: 72mm;
-          margin: 0 auto;
-          padding: 4mm 0;
-        }
-        h2 { font-size: 14pt; margin: 0 0 2mm 0; }
-        .numero { font-size: 36pt; font-weight: 900; margin: 3mm 0; }
-        p { font-size: 10pt; margin: 1mm 0; }
-        hr { border: none; border-top: 1px dashed #000; margin: 3mm 0; }
+        body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
+        .numero { font-size: 5rem; font-weight: 900; color: #0d6efd; margin: 1rem 0; }
+        h2 { color: #333; }
+        p { color: #555; }
+        hr { margin: 1rem 0; }
       </style>
     </head>
     <body>
@@ -132,19 +104,11 @@ function imprimirTicket() {
       <p><strong>Hora:</strong> ${new Date(turnoActual.fecha_hora).toLocaleString('es-ES')}</p>
       <hr>
       <p>Por favor espere a ser llamado.</p>
+      <script>window.onload = function() { window.print(); window.close(); };<\/script>
     </body>
     </html>
   `);
-  doc.close();
-
-  // Esperar a que el contenido se renderice y luego imprimir
-  iframe.contentWindow.onload = function() {
-    iframe.contentWindow.print();
-  };
-  // Fallback: imprimir después de breve delay
-  setTimeout(function() {
-    try { iframe.contentWindow.print(); } catch(e) {}
-  }, 500);
+  win.document.close();
 }
 
 // Inicializar
