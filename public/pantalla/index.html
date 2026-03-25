@@ -12,61 +12,60 @@
       background: #0a0a1a;
       color: #fff;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
+
+    /* ===== MAIN SCREEN (fills all space above ticker) ===== */
     .screen {
       display: grid;
       grid-template-columns: 50fr 50fr;
-      height: 100vh;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
     }
 
-    /* ===== LEFT PANEL ===== */
+    /* ===== LEFT PANEL: current turn + badge list ===== */
     .panel-turno {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 1.5rem 2rem 1rem;
-      position: relative;
+      padding: 1.2rem 1.5rem 0.75rem;
       border-right: 2px solid rgba(255,255,255,0.08);
       overflow: hidden;
     }
     .logo-wrap {
-      margin-bottom: 1rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-bottom: 0.75rem;
     }
     #hospital-logo {
-      max-height: 80px;
-      max-width: 260px;
+      max-height: 70px;
+      max-width: 240px;
       object-fit: contain;
       display: none;
     }
     #hospital-nombre {
-      font-size: 2rem;
+      font-size: 1.8rem;
       font-weight: 900;
       letter-spacing: 3px;
       text-transform: uppercase;
     }
-
-    /* Turno en llamada (animación) */
+    /* Big current turn */
     .turno-llamada-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      padding: 0.5rem 0 0.5rem;
+      text-align: center;
+      padding: 0.5rem 0;
+      flex-shrink: 0;
     }
     .turno-etiqueta {
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       color: #adb5bd;
       text-transform: uppercase;
       letter-spacing: 4px;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.1rem;
     }
     .turno-numero {
-      font-size: 9rem;
+      font-size: 8rem;
       font-weight: 900;
       line-height: 1;
       color: #FF8500;
@@ -74,24 +73,27 @@
       transition: all 0.3s;
     }
     .turno-numero.sin-turno {
-      font-size: 4rem;
+      font-size: 3.5rem;
       color: #333;
       font-style: italic;
       text-shadow: none;
     }
     .turno-area {
-      font-size: 1.4rem;
+      font-size: 1.2rem;
       color: #adb5bd;
-      margin-top: 0.25rem;
+      margin-top: 0.15rem;
     }
     .turno-puesto {
-      margin-top: 0.5rem;
-      font-size: 1.1rem;
+      margin-top: 0.4rem;
+      font-size: 1rem;
       font-weight: 700;
-      padding: 0.3rem 1.2rem;
+      padding: 0.25rem 1rem;
       border-radius: 30px;
       background: #FF8500;
       display: none;
+      margin-left: auto;
+      margin-right: auto;
+      width: fit-content;
     }
 
     @keyframes llamada-entrada {
@@ -107,51 +109,71 @@
       animation: llamada-entrada 0.45s ease-out, parpadeo 0.65s ease 0.5s 4;
     }
 
-    /* ===== LISTA DE TURNOS LLAMADOS ===== */
-    .turnos-lista-wrap {
-      width: 100%;
-      flex: 1;
-      overflow-y: auto;
-      margin-top: 0.5rem;
-    }
+    /* ===== BADGE LIST of all called turns ===== */
     .turnos-lista-titulo {
-      font-size: 0.7rem;
-      color: #555;
+      font-size: 0.68rem;
+      color: #444;
       text-transform: uppercase;
       letter-spacing: 3px;
       margin-bottom: 0.4rem;
-      padding-bottom: 0.3rem;
+      padding-bottom: 0.25rem;
       border-bottom: 1px solid #1e1e3a;
+      text-align: center;
+      flex-shrink: 0;
     }
-    .turno-lista-item {
+    .turnos-badges-wrap {
+      flex: 1;
+      overflow-y: auto;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #1a1a30;
-      font-size: 0.95rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-content: flex-start;
+      justify-content: center;
+      padding: 0.4rem 0;
     }
-    .turno-lista-item:first-child {
+    .turno-badge {
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 0.55rem 1.1rem;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #fff;
+      white-space: nowrap;
+      min-width: 90px;
+      text-align: center;
+    }
+    .turno-badge.mas-reciente {
+      background: rgba(255,133,0,0.2);
+      border-color: #FF8500;
       color: #FF8500;
-      font-weight: 700;
-      font-size: 1rem;
+      font-size: 1.8rem;
     }
-    .tli-numero { font-weight: 700; min-width: 60px; }
-    .tli-puesto { color: #adb5bd; font-size: 0.85rem; text-align: right; }
+    .turno-badge .badge-puesto {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #aaa;
+      margin-top: 0.15rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .turno-badge.mas-reciente .badge-puesto { color: #FF8500cc; }
 
-    /* ===== RIGHT PANEL ===== */
+    /* ===== RIGHT PANEL: clock + video ===== */
     .panel-media {
       display: flex;
       flex-direction: column;
       background: #050514;
     }
     .media-clock {
-      padding: 1.2rem 1.5rem;
+      padding: 1rem 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: rgba(255,255,255,0.04);
       border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
     }
     #reloj {
       font-size: 2rem;
@@ -169,8 +191,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      padding: 0.75rem;
       overflow: hidden;
+      min-height: 0;
     }
     .media-video iframe,
     .media-video video {
@@ -182,18 +205,19 @@
     .media-video iframe { aspect-ratio: 16/9; }
     .media-video video { height: 100%; object-fit: contain; }
 
-    /* ===== SCROLLING TICKER ===== */
+    /* ===== FULL-WIDTH SCROLLING TICKER (below both panels) ===== */
     .ticker-wrap {
-      background: rgba(0,0,0,0.5);
-      border-top: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.6);
+      border-top: 1px solid rgba(255,255,255,0.1);
       overflow: hidden;
-      padding: 0.5rem 0;
+      padding: 0.45rem 0;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     .ticker-content {
       display: inline-block;
       animation: ticker-scroll 30s linear infinite;
-      font-size: 0.95rem;
+      font-size: 1rem;
       color: #adb5bd;
       padding-left: 100%;
     }
@@ -208,7 +232,7 @@
   <style id="dynamic-styles"></style>
 
   <div class="screen">
-    <!-- LEFT -->
+    <!-- LEFT: current turn + badge list -->
     <div class="panel-turno">
       <div class="logo-wrap">
         <img id="hospital-logo" src="" alt="Logo">
@@ -222,13 +246,11 @@
         <div class="turno-puesto" id="turno-puesto"></div>
       </div>
 
-      <div class="turnos-lista-wrap">
-        <div class="turnos-lista-titulo">Turnos llamados hoy</div>
-        <div id="turnos-lista"></div>
-      </div>
+      <div class="turnos-lista-titulo">Turnos llamados hoy</div>
+      <div class="turnos-badges-wrap" id="turnos-badges"></div>
     </div>
 
-    <!-- RIGHT -->
+    <!-- RIGHT: clock + video -->
     <div class="panel-media">
       <div class="media-clock">
         <div id="reloj">--:--:--</div>
@@ -238,28 +260,47 @@
         <iframe id="video-frame" src="" allowfullscreen style="display:none"></iframe>
         <video id="video-uploaded" src="" autoplay muted loop style="display:none"></video>
       </div>
-      <div class="ticker-wrap">
-        <div class="ticker-content" id="ticker-content">
-          <span id="ticker-mensaje">Bienvenido al sistema de turnos electrónico</span>
-          <span class="sep">◆</span>
-          <span id="ticker-horario"></span>
-          <span class="sep">◆</span>
-          <span id="ticker-nombre"></span>
-          <span class="sep">◆</span>
-          <span>Gracias por su visita</span>
-        </div>
-      </div>
+    </div>
+  </div>
+
+  <!-- FULL-WIDTH TICKER -->
+  <div class="ticker-wrap">
+    <div class="ticker-content" id="ticker-content">
+      <span id="ticker-mensaje">Bienvenido al sistema de turnos electrónico</span>
+      <span class="sep">◆</span>
+      <span id="ticker-horario"></span>
+      <span class="sep">◆</span>
+      <span id="ticker-nombre"></span>
+      <span class="sep">◆</span>
+      <span>Gracias por su visita</span>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    // Lista de todos los turnos llamados (los más recientes al inicio)
+    const STORAGE_KEY = 'eturn_pantalla_sucursal';
     let turnosLlamados = [];
-    const MAX_LISTA = 30;
+    const MAX_LISTA = 50;
+    let sucursalId = null;
 
-    // Reloj + fecha
+    // ===== BRANCH CHECK — redirect if no branch =====
+    (function () {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && Number.isInteger(Number(parsed.id)) && Number(parsed.id) > 0) {
+            sucursalId = parseInt(parsed.id, 10);
+            return;
+          }
+        } catch (e) { console.warn('Error leyendo sucursal en localStorage:', e); }
+        localStorage.removeItem(STORAGE_KEY);
+      }
+      window.location.href = '/pantalla-select';
+    })();
+
+    // ===== CLOCK =====
     function actualizarReloj() {
       const ahora = new Date();
       document.getElementById('reloj').textContent = ahora.toLocaleTimeString('es-ES');
@@ -270,13 +311,11 @@
     setInterval(actualizarReloj, 1000);
     actualizarReloj();
 
-    // Cargar configuración
+    // ===== CONFIG =====
     async function cargarConfig() {
       try {
         const res = await fetch('/api/config');
         const config = await res.json();
-
-        window._sucursalPantalla = config.kiosco_sucursal_id || null;
 
         const nombre = config.nombre || 'E-TURNS';
         document.getElementById('ticker-nombre').textContent = nombre;
@@ -303,7 +342,8 @@
           .turno-puesto { background: ${colorSecundario}; }
           .ticker-content .sep { color: ${colorSecundario}; }
           #reloj { color: ${colorPrimario}; }
-          .turno-lista-item:first-child { color: ${colorPrimario}; }
+          .turno-badge.mas-reciente { background: ${colorPrimario}33; border-color: ${colorPrimario}; color: ${colorPrimario}; }
+          .turno-badge.mas-reciente .badge-puesto { color: ${colorPrimario}cc; }
         `;
 
         if (config.video_fuente === 'archivo' && config.video_url) {
@@ -360,17 +400,15 @@
         .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
-    // Mostrar turno con animación + agregar a lista
+    // ===== TURN DISPLAY =====
     function mostrarTurno(turno) {
       const numEl = document.getElementById('turno-numero');
       numEl.classList.remove('sin-turno', 'animando');
       numEl.textContent = turno.numero;
-      void numEl.offsetWidth; // force reflow
+      void numEl.offsetWidth;
       numEl.classList.add('animando');
 
-      // Determine display area
-      const area = turno.area || '';
-      document.getElementById('turno-area').textContent = area;
+      document.getElementById('turno-area').textContent = turno.area || '';
 
       const puestoEl = document.getElementById('turno-puesto');
       if (turno.ventanilla) {
@@ -380,27 +418,30 @@
         puestoEl.style.display = 'none';
       }
 
-      // Add to called turns list (most recent first)
-      const existing = turnosLlamados.findIndex(t => t.numero === turno.numero && t.ventanilla === turno.ventanilla);
+      // Update badge list (most recent first, deduplicate)
+      const key = turno.numero + '|' + (turno.ventanilla || '');
+      const existing = turnosLlamados.findIndex(t => (t.numero + '|' + (t.ventanilla || '')) === key);
       if (existing !== -1) turnosLlamados.splice(existing, 1);
       turnosLlamados.unshift(turno);
       if (turnosLlamados.length > MAX_LISTA) turnosLlamados.pop();
 
-      renderTurnosLlamados();
+      renderBadges();
       anunciarVoz(turno);
     }
 
-    function renderTurnosLlamados() {
-      const el = document.getElementById('turnos-lista');
-      el.innerHTML = turnosLlamados.map((t, i) => `
-        <div class="turno-lista-item">
-          <span class="tli-numero">Turno: ${escHtml(t.numero)}</span>
-          <span class="tli-puesto">${t.ventanilla ? 'Puesto: ' + escHtml(t.ventanilla) : escHtml(t.area || '')}</span>
-        </div>
-      `).join('');
+    function renderBadges() {
+      const wrap = document.getElementById('turnos-badges');
+      wrap.innerHTML = turnosLlamados.map((t, i) => {
+        const puestoHtml = t.ventanilla
+          ? `<span class="badge-puesto">${escHtml(t.ventanilla)}</span>`
+          : (t.area ? `<span class="badge-puesto">${escHtml(t.area)}</span>` : '');
+        return `<div class="turno-badge${i === 0 ? ' mas-reciente' : ''}">
+          ${escHtml(t.numero)}${puestoHtml}
+        </div>`;
+      }).join('');
     }
 
-    // TTS
+    // ===== TTS =====
     function anunciarVoz(turno) {
       if (!window.speechSynthesis) return;
       const msg = new SpeechSynthesisUtterance();
@@ -417,8 +458,9 @@
     }
 
     socket.on('turn_called', mostrarTurno);
+
+    // ===== INIT =====
     cargarConfig().then(() => {
-      const sucursalId = window._sucursalPantalla;
       if (sucursalId) {
         socket.emit('join_branch', { sucursal_id: sucursalId });
       }
