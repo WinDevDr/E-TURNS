@@ -1,7 +1,7 @@
 const socket = io();
 let turnoActual = null;
 let configSistema = {};
-let sucursalKiosco = null; // sucursal_id configurada para este kiosco
+let sucursalKiosco = null; // sucursal_id configurado para este kiosco
 let autoCloseTimer = null;
 
 // Cargar configuración del hospital
@@ -22,34 +22,85 @@ async function cargarConfig() {
       document.getElementById('hospital-nombre').textContent = config.nombre;
     }
 
-    // Aplicar colores del kiosco
-    const primario = config.color_kiosco_primario || config.colorPrimario || '#FF8500';
+    // Aplicar color de fondo del kiosco
     const bg = config.color_kiosco_fondo || '#f5f5f5';
     document.body.style.background = bg;
-
-    // Actualizar colores de botones con el color primario configurado
-    document.querySelectorAll('.tipo-btn:not(.pref-btn)').forEach((btn, i) => {
-      // Solo actualizar el primer botón si hay un color primario configurado diferente al default
-      if (i === 0 && primario !== '#FF8500') {
-        btn.style.background = primario;
-      }
-    });
 
     // Sucursal del kiosco (configurada en admin)
     if (config.kiosco_sucursal_id) {
       sucursalKiosco = config.kiosco_sucursal_id;
+      // Unirse a sala de socket por sucursal
+      socket.emit('join_branch', { sucursal_id: sucursalKiosco });
     }
   } catch (e) {
     console.error('Error al cargar config:', e);
   }
 }
 
-// Solicitar turno normal — todos los tipos inician en Facturación
+// Cargar tipos de atención dinámicamente
+async function cargarTipos() {
+  try {
+    const res = await fetch('/api/tipos-kiosco');
+    const tipos = await res.json();
+    const grid = document.getElementById('tipos-grid');
+    grid.innerHTML = '';
+
+    tipos.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'tipo-btn';
+      btn.style.background = t.color || '#FF8500';
+      // Detectar si el color es muy claro para usar texto oscuro
+      const brightness = hexBrightness(t.color || '#FF8500');
+      btn.style.color = brightness > 160 ? '#333' : '#fff';
+      btn.textContent = t.nombre;
+      btn.onclick = () => solicitarTurno(t.nombre);
+      grid.appendChild(btn);
+    });
+
+    // Botón de turno preferencial siempre al final
+    const prefBtn = document.createElement('button');
+    prefBtn.className = 'tipo-btn pref-btn';
+    prefBtn.style.background = '#ffc107';
+    prefBtn.style.color = '#333';
+    prefBtn.textContent = 'Turno Preferencial';
+    prefBtn.onclick = () => abrirModalPreferencial(tipos);
+    grid.appendChild(prefBtn);
+  } catch (e) {
+    console.error('Error al cargar tipos:', e);
+  }
+}
+
+function hexBrightness(hex) {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000;
+}
+
+// Abrir modal preferencial con tipos cargados dinámicamente
+function abrirModalPreferencial(tipos) {
+  const grid = document.getElementById('modal-pref-grid');
+  grid.innerHTML = '';
+  tipos.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tipo-btn';
+    btn.style.background = t.color || '#FF8500';
+    const brightness = hexBrightness(t.color || '#FF8500');
+    btn.style.color = brightness > 160 ? '#333' : '#fff';
+    btn.textContent = t.nombre;
+    btn.onclick = () => solicitarTurnoPref(t.nombre);
+    grid.appendChild(btn);
+  });
+  document.getElementById('modal-preferencial').classList.add('active');
+}
+
+// Solicitar turno normal
 async function solicitarTurno(tipo) {
   await _crearTurno(tipo, 'Facturación', 0);
 }
 
-// Solicitar turno preferencial — todos los tipos inician en Facturación
+// Solicitar turno preferencial
 async function solicitarTurnoPref(tipo) {
   cerrarModalPreferencial();
   await _crearTurno(tipo, 'Facturación', 1);
@@ -82,30 +133,25 @@ async function _crearTurno(tipo_paciente, area, preferencial) {
     document.getElementById('ticket-hora').textContent = new Date(turno.fecha_hora).toLocaleString('es-ES');
 
     const prefBadge = document.getElementById('ticket-pref-badge');
-    prefBadge.innerHTML = turno.preferencial ? '<span class="badge-pref">⭐ Preferencial</span>' : '';
+    prefBadge.innerHTML = turno.preferencial ? '<span class="badge-pref">Preferencial</span>' : '';
 
     document.getElementById('modal-ticket').classList.add('active');
 
     // Reiniciar barra de cuenta regresiva
     const bar = document.getElementById('countdown-bar');
     bar.style.animation = 'none';
-    void bar.offsetWidth; // reflow
+    void bar.offsetWidth;
     bar.style.animation = 'countdown-shrink 2s linear forwards';
 
     // Auto-cerrar en 2 segundos
     if (autoCloseTimer) clearTimeout(autoCloseTimer);
-    autoCloseTimer = setTimeout(() => {
-      cerrarModal();
-    }, 2000);
+    autoCloseTimer = setTimeout(() => cerrarModal(), 2000);
 
+    // Emitir al socket de la sucursal
     socket.emit('new_turn', turno);
   } catch (e) {
     alert('Error al solicitar turno. Intente nuevamente.');
   }
-}
-
-function abrirModalPreferencial() {
-  document.getElementById('modal-preferencial').classList.add('active');
 }
 
 function cerrarModalPreferencial() {
@@ -120,7 +166,6 @@ function cerrarModal() {
 
 function imprimirTicket() {
   if (!turnoActual) return;
-  // Detener auto-close al imprimir (el usuario puede querer ver el ticket)
   if (autoCloseTimer) { clearTimeout(autoCloseTimer); autoCloseTimer = null; }
 
   const logoUrl = configSistema.logo_url || configSistema.logo || '';
@@ -130,7 +175,7 @@ function imprimirTicket() {
     : `<h2 style="text-align:center;margin-bottom:1rem;color:#FF8500">${nombreInst}</h2>`;
 
   const prefHtml = turnoActual.preferencial
-    ? `<p style="color:#f59e0b;font-weight:700;text-align:center">⭐ Turno Preferencial</p>`
+    ? `<p style="color:#f59e0b;font-weight:700;text-align:center">Turno Preferencial</p>`
     : '';
   const tipoHtml = turnoActual.tipo_paciente
     ? `<p><strong>Tipo:</strong> ${turnoActual.tipo_paciente}</p>`
@@ -166,9 +211,10 @@ function imprimirTicket() {
   `);
   win.document.close();
 
-  // Auto-cerrar modal 2s después de imprimir
+  // Auto-cerrar modal después de imprimir
   autoCloseTimer = setTimeout(() => cerrarModal(), 2000);
 }
 
 // Inicializar
 cargarConfig();
+cargarTipos();

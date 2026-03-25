@@ -158,6 +158,31 @@ function initDatabase() {
         db.run("INSERT INTO sucursales (nombre) VALUES ('Sucursal Principal')");
       }
     });
+
+    // Tabla de tipos de atención del kiosco
+    db.run(`CREATE TABLE IF NOT EXISTS tipos_kiosco (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      color TEXT DEFAULT '#FF8500',
+      orden INTEGER DEFAULT 0,
+      activo INTEGER DEFAULT 1
+    )`);
+
+    // Sembrar tipos de kiosco por defecto si no existen
+    db.get('SELECT COUNT(*) as count FROM tipos_kiosco', (err, row) => {
+      if (!err && row.count === 0) {
+        const tiposDefault = [
+          { nombre: 'Asegurado', color: '#FF8500', orden: 1 },
+          { nombre: 'No Asegurado', color: '#d4730a', orden: 2 },
+          { nombre: 'Entrega de Resultados', color: '#e06000', orden: 3 },
+          { nombre: 'Toma de Muestra', color: '#b35900', orden: 4 },
+          { nombre: 'Pre-Empleo', color: '#ff9d33', orden: 5 }
+        ];
+        const stmt = db.prepare('INSERT INTO tipos_kiosco (nombre, color, orden) VALUES (?, ?, ?)');
+        tiposDefault.forEach(t => stmt.run(t.nombre, t.color, t.orden));
+        stmt.finalize();
+      }
+    });
   });
 }
 

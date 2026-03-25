@@ -8,7 +8,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; min-height: 100vh; }
     header {
-      background: linear-gradient(90deg, #0d6efd, #198754);
+      background: linear-gradient(90deg, #FF8500, #e06000);
       color: #fff;
       padding: 1rem 2rem;
       display: flex;
@@ -46,7 +46,7 @@
       min-width: 120px;
       text-align: center;
     }
-    .stat-card .num { font-size: 1.8rem; font-weight: 900; color: #0d6efd; }
+    .stat-card .num { font-size: 1.8rem; font-weight: 900; color: #FF8500; }
     .stat-card .lbl { font-size: 0.78rem; color: #666; margin-top: 0.2rem; }
     /* Kanban */
     .kanban-board {
@@ -67,7 +67,7 @@
     .col-header {
       padding: 1rem;
       color: #fff;
-      background: #6c757d;
+      background: #FF8500;
       border-radius: 12px 12px 0 0;
       font-weight: 700;
       font-size: 0.95rem;
@@ -102,10 +102,10 @@
     .turn-actions { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
     .btn { padding: 0.4rem 0.75rem; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; transition: opacity 0.15s; width: 100%; text-align: left; }
     .btn:hover { opacity: 0.85; }
-    .btn-llamar { background: #0d6efd; color: #fff; }
-    .btn-pasar { background: #6f42c1; color: #fff; }
-    .btn-solo-fact { background: #198754; color: #fff; }
-    .btn-atender { background: #198754; color: #fff; }
+    .btn-llamar { background: #FF8500; color: #fff; }
+    .btn-pasar { background: #FF8500; color: #fff; }
+    .btn-solo-fact { background: #FF8500; color: #fff; }
+    .btn-atender { background: #FF8500; color: #fff; }
     .btn-cancelar { background: #dc3545; color: #fff; }
     .empty-col { text-align: center; color: #bbb; padding: 2rem 1rem; font-style: italic; font-size: 0.9rem; }
     .turn-card.finalizado { opacity: 0.7; border-left-color: #6c757d; background: #f0f0f0; }
@@ -115,7 +115,7 @@
 <body>
   <header>
     <div class="header-left">
-      <h1>🖥️ Panel Operador — E-TURNS</h1>
+      <h1>Panel Operador</h1>
       <span id="operador-nombre"></span>
       <span id="sucursal-nombre" style="font-size:0.8rem;opacity:0.7;margin-top:0.1rem"></span>
     </div>
@@ -127,7 +127,7 @@
         </select>
       </div>
       <form action="/auth/logout" method="POST" style="display:inline">
-        <button type="submit" class="btn-logout">🚪 Salir</button>
+        <button type="submit" class="btn-logout">Salir</button>
       </form>
     </div>
   </header>
@@ -136,41 +136,41 @@
     <div class="stats-bar">
       <div class="stat-card">
         <div class="num" id="stat-espera-sala">0</div>
-        <div class="lbl">🪑 Sala de Espera</div>
+        <div class="lbl">Sala de Espera</div>
       </div>
       <div class="stat-card">
         <div class="num" id="stat-facturacion">0</div>
-        <div class="lbl">💰 En Facturación</div>
+        <div class="lbl">En Facturación</div>
       </div>
       <div class="stat-card">
         <div class="num" id="stat-espera-muestra">0</div>
-        <div class="lbl">🔬 Espera Muestra</div>
+        <div class="lbl">Espera Muestra</div>
       </div>
       <div class="stat-card">
         <div class="num" id="stat-toma-muestra">0</div>
-        <div class="lbl">🧪 En Toma Muestra</div>
+        <div class="lbl">En Toma Muestra</div>
       </div>
     </div>
 
     <div class="kanban-board">
       <div class="kanban-col" id="col-espera-sala">
-        <div class="col-header">🪑 Sala de Espera</div>
+        <div class="col-header">Sala de Espera</div>
         <div class="col-body" id="cards-espera-sala"></div>
       </div>
       <div class="kanban-col" id="col-facturacion">
-        <div class="col-header" style="background:#0d6efd">💰 En Facturación</div>
+        <div class="col-header" style="background:#FF8500">En Facturación</div>
         <div class="col-body" id="cards-facturacion"></div>
       </div>
       <div class="kanban-col" id="col-espera-muestra">
-        <div class="col-header" style="background:#6f42c1">🔬 Espera Toma de Muestra</div>
+        <div class="col-header" style="background:#FF8500">Espera Toma de Muestra</div>
         <div class="col-body" id="cards-espera-muestra"></div>
       </div>
       <div class="kanban-col" id="col-toma-muestra">
-        <div class="col-header" style="background:#198754">🧪 Toma de Muestra</div>
+        <div class="col-header" style="background:#FF8500">Toma de Muestra</div>
         <div class="col-body" id="cards-toma-muestra"></div>
       </div>
       <div class="kanban-col" id="col-finalizados">
-        <div class="col-header" style="background:#495057">✅ Finalizados Hoy</div>
+        <div class="col-header" style="background:#FF8500">Finalizados Hoy</div>
         <div class="col-body" id="cards-finalizados"></div>
       </div>
     </div>
@@ -205,32 +205,32 @@
       if (!finalizado) {
         if (etapa === 'espera_sala') {
           acciones = `
-            <button class="btn btn-llamar" onclick="llamarFact(${t.id})">📣 Llamar a Facturación</button>
-            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+            <button class="btn btn-llamar" onclick="llamarFact(${t.id})">Llamar a Facturación</button>
+            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">Cancelar</button>
           `;
         } else if (etapa === 'facturacion') {
           acciones = `
-            <button class="btn btn-pasar" onclick="pasarMuestra(${t.id})">🔬 Pasar a Toma de Muestra</button>
-            <button class="btn btn-solo-fact" onclick="atenderFact(${t.id})">✅ Solo Facturación</button>
-            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+            <button class="btn btn-pasar" onclick="pasarMuestra(${t.id})">Pasar a Toma de Muestra</button>
+            <button class="btn btn-solo-fact" onclick="atenderFact(${t.id})">Solo Facturación</button>
+            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">Cancelar</button>
           `;
         } else if (etapa === 'espera_muestra') {
           acciones = `
-            <button class="btn btn-llamar" onclick="llamarMuestra(${t.id})">📣 Llamar a Toma de Muestra</button>
-            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+            <button class="btn btn-llamar" onclick="llamarMuestra(${t.id})">Llamar a Toma de Muestra</button>
+            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">Cancelar</button>
           `;
         } else if (etapa === 'toma_muestra') {
           acciones = `
-            <button class="btn btn-atender" onclick="atenderMuestra(${t.id})">✅ Atendido</button>
-            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">❌ Cancelar</button>
+            <button class="btn btn-atender" onclick="atenderMuestra(${t.id})">Atendido</button>
+            <button class="btn btn-cancelar" onclick="cancelarTurno(${t.id})">Cancelar</button>
           `;
         }
       }
 
-      const prefBadge = t.preferencial ? '<span class="badge badge-pref">⭐ Preferencial</span>' : '';
+      const prefBadge = t.preferencial ? '<span class="badge badge-pref">Preferencial</span>' : '';
       const tipoBadge = t.tipo_paciente ? `<span class="badge badge-tipo">${escHtml(t.tipo_paciente)}</span>` : '';
       const estadoBadge = finalizado
-        ? `<span class="badge" style="background:${t.estado==='atendido'?'#d1e7dd;color:#0a3622':'#f8d7da;color:#842029'}">${t.estado === 'atendido' ? '✅ Atendido' : '❌ Cancelado'}</span>`
+        ? `<span class="badge" style="background:${t.estado==='atendido'?'#d1e7dd;color:#0a3622':'#f8d7da;color:#842029'}">${t.estado === 'atendido' ? 'Atendido' : 'Cancelado'}</span>`
         : '';
       const atendidoPorHtml = t.atendido_por_facturacion
         ? `<div class="turn-time">Fact: ${escHtml(t.atendido_por_facturacion)}</div>` : '';
@@ -329,16 +329,32 @@
       } catch (e) {}
     }
 
+    let miSucursalId = null;
+
     async function cargarSucursal() {
       try {
+        // Obtener sucursal del operador autenticado
+        const meRes = await fetch('/auth/me');
+        if (meRes.ok) {
+          const me = await meRes.json();
+          miSucursalId = me.sucursalId || null;
+          if (miSucursalId) {
+            socket.emit('join_branch', { sucursal_id: miSucursalId });
+          }
+          if (me.sucursalNombre) {
+            const el = document.getElementById('sucursal-nombre');
+            if (el) el.textContent = me.sucursalNombre;
+          }
+        }
+
         const res = await fetch('/api/config');
         if (res.ok) {
           const cfg = await res.json();
           const el = document.getElementById('sucursal-nombre');
-          if (el && cfg.nombre) el.textContent = '🏥 ' + cfg.nombre;
+          if (el && !el.textContent && cfg.nombre) el.textContent = cfg.nombre;
           // Aplicar colores del panel al header
           const primario = cfg.color_panel_primario || '#FF8500';
-          const secundario = cfg.color_panel_secundario || '#198754';
+          const secundario = cfg.color_panel_secundario || '#e06000';
           const header = document.querySelector('header');
           if (header) header.style.background = `linear-gradient(90deg, ${primario}, ${secundario})`;
         }
@@ -398,7 +414,7 @@
         const idx = turnos.findIndex(t => t.id === id);
         if (idx !== -1) turnos[idx] = turno;
         renderKanban();
-        socket.emit('update_stats');
+        socket.emit('update_stats', miSucursalId ? { sucursal_id: miSucursalId } : {});
       } catch (e) { alert('Error al atender turno.'); }
     }
 
@@ -409,7 +425,7 @@
         const idx = turnos.findIndex(t => t.id === id);
         if (idx !== -1) turnos[idx] = turno;
         renderKanban();
-        socket.emit('update_stats');
+        socket.emit('update_stats', miSucursalId ? { sucursal_id: miSucursalId } : {});
       } catch (e) { alert('Error al atender turno.'); }
     }
 
@@ -421,7 +437,7 @@
         const turno = await res.json();
         const idx = turnos.findIndex(t => t.id === id);
         if (idx !== -1) turnos[idx] = turno;
-        socket.emit('cancel_turn', { id });
+        socket.emit('cancel_turn', { id, sucursal_id: turno.sucursal_id || miSucursalId || null });
         renderKanban();
       } catch (e) { alert('Error al cancelar turno.'); }
     }

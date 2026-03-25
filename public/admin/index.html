@@ -349,8 +349,22 @@
 
       <div class="card">
         <h2>📋 Tipos de Atención del Kiosco</h2>
-        <small style="color:#888;display:block;margin-bottom:1rem">Gestione los tipos de atención disponibles en el kiosco (funcionalidad futura).</small>
-        <p style="color:#aaa;font-style:italic">Próximamente: personalice los tipos de atención mostrados en el kiosco.</p>
+        <small style="color:#888;display:block;margin-bottom:1.25rem">Agregue, edite el color y elimine las opciones que verán los pacientes en el kiosco de autoatención.</small>
+        <form id="form-nuevo-tipo" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.25rem">
+          <div class="form-group" style="flex:1;min-width:180px;margin:0">
+            <label>Nombre del tipo</label>
+            <input type="text" id="nuevo-tipo-nombre" placeholder="Ej: Consulta General" required>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Color</label>
+            <div class="color-row">
+              <input type="color" id="nuevo-tipo-color-picker" value="#FF8500">
+              <input type="text" id="nuevo-tipo-color" value="#FF8500" style="width:90px">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">➕ Agregar</button>
+        </form>
+        <div id="tipos-kiosco-lista"><p style="color:#888">Cargando tipos...</p></div>
       </div>
     </div>
 
@@ -611,6 +625,7 @@
     syncColors('area-color-picker', 'area-color');
     syncColors('conf-color_kiosco_primario-picker', 'conf-color_kiosco_primario');
     syncColors('conf-color_kiosco_fondo-picker', 'conf-color_kiosco_fondo');
+    syncColors('nuevo-tipo-color-picker', 'nuevo-tipo-color');
     syncColors('conf-color_fondo_pantalla-picker', 'conf-color_fondo_pantalla');
     syncColors('conf-color_pantalla_primario-picker', 'conf-color_pantalla_primario');
     syncColors('conf-color_pantalla_secundario-picker', 'conf-color_pantalla_secundario');
@@ -771,6 +786,114 @@
         mostrarAlerta(result.mensaje || 'Sucursal del kiosco guardada.', 'success');
       } catch (e) { mostrarAlerta('Error al guardar.', 'error'); }
     }
+
+    // ========== Tipos de Kiosco ==========
+    async function cargarTiposKiosco() {
+      const lista = document.getElementById('tipos-kiosco-lista');
+      if (!lista) return;
+      try {
+        const res = await fetch('/api/tipos-kiosco');
+        const tipos = await res.json();
+        if (tipos.length === 0) {
+          lista.innerHTML = '<p style="color:#aaa">Sin tipos configurados.</p>';
+          return;
+        }
+        lista.innerHTML = `
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:#f8f9fa">
+                <th style="padding:0.6rem 1rem;text-align:left;font-size:0.85rem;color:#555">Nombre</th>
+                <th style="padding:0.6rem 1rem;text-align:left;font-size:0.85rem;color:#555">Color</th>
+                <th style="padding:0.6rem 1rem;text-align:left;font-size:0.85rem;color:#555">Orden</th>
+                <th style="padding:0.6rem 1rem;text-align:left;font-size:0.85rem;color:#555">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tipos.map((t, i) => `
+                <tr style="border-bottom:1px solid #f0f0f0" id="tipo-row-${t.id}">
+                  <td style="padding:0.6rem 1rem">
+                    <input type="text" value="${escHtml(t.nombre)}" id="tipo-nombre-${t.id}"
+                      style="border:1px solid #dee2e6;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.9rem;width:100%">
+                  </td>
+                  <td style="padding:0.6rem 1rem">
+                    <div style="display:flex;gap:0.4rem;align-items:center">
+                      <input type="color" value="${escHtml(t.color)}" id="tipo-color-picker-${t.id}"
+                        oninput="document.getElementById('tipo-color-${t.id}').value=this.value"
+                        style="width:36px;height:32px;border:none;cursor:pointer;border-radius:4px">
+                      <input type="text" value="${escHtml(t.color)}" id="tipo-color-${t.id}"
+                        oninput="document.getElementById('tipo-color-picker-${t.id}').value=this.value"
+                        style="width:80px;border:1px solid #dee2e6;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.9rem">
+                    </div>
+                  </td>
+                  <td style="padding:0.6rem 1rem">
+                    <input type="number" value="${t.orden}" id="tipo-orden-${t.id}" min="0"
+                      style="width:60px;border:1px solid #dee2e6;border-radius:6px;padding:0.3rem 0.5rem;font-size:0.9rem">
+                  </td>
+                  <td style="padding:0.6rem 1rem">
+                    <button class="btn btn-primary" style="margin-right:0.3rem;padding:0.3rem 0.7rem;font-size:0.8rem;width:auto"
+                      onclick="guardarTipoKiosco(${t.id})">💾</button>
+                    <button class="btn btn-cancelar" style="padding:0.3rem 0.7rem;font-size:0.8rem;width:auto"
+                      onclick="eliminarTipoKiosco(${t.id})">🗑️</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (e) {
+        lista.innerHTML = '<p style="color:#dc3545">Error al cargar tipos.</p>';
+      }
+    }
+
+    async function guardarTipoKiosco(id) {
+      const nombre = document.getElementById(`tipo-nombre-${id}`).value.trim();
+      const color = document.getElementById(`tipo-color-${id}`).value;
+      const orden = parseInt(document.getElementById(`tipo-orden-${id}`).value) || 0;
+      if (!nombre) { mostrarAlerta('El nombre es requerido.', 'error'); return; }
+      try {
+        const res = await fetch(`/api/tipos-kiosco/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, color, orden, activo: 1 })
+        });
+        if (!res.ok) { const e = await res.json(); mostrarAlerta(e.error || 'Error.', 'error'); return; }
+        mostrarAlerta('Tipo actualizado correctamente.', 'success');
+        cargarTiposKiosco();
+      } catch (e) { mostrarAlerta('Error al guardar tipo.', 'error'); }
+    }
+
+    async function eliminarTipoKiosco(id) {
+      if (!confirm('¿Eliminar este tipo de atención del kiosco?')) return;
+      try {
+        const res = await fetch(`/api/tipos-kiosco/${id}`, { method: 'DELETE' });
+        if (!res.ok) { const e = await res.json(); mostrarAlerta(e.error || 'Error.', 'error'); return; }
+        mostrarAlerta('Tipo eliminado.', 'success');
+        cargarTiposKiosco();
+      } catch (e) { mostrarAlerta('Error al eliminar tipo.', 'error'); }
+    }
+
+    // Formulario nuevo tipo
+    document.getElementById('form-nuevo-tipo').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('nuevo-tipo-nombre').value.trim();
+      const color = document.getElementById('nuevo-tipo-color').value;
+      if (!nombre) return;
+      const tipos = document.querySelectorAll('[id^="tipo-row-"]');
+      const orden = tipos.length + 1;
+      try {
+        const res = await fetch('/api/tipos-kiosco', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, color, orden })
+        });
+        if (!res.ok) { const e = await res.json(); mostrarAlerta(e.error || 'Error.', 'error'); return; }
+        document.getElementById('nuevo-tipo-nombre').value = '';
+        document.getElementById('nuevo-tipo-color').value = '#FF8500';
+        document.getElementById('nuevo-tipo-color-picker').value = '#FF8500';
+        mostrarAlerta('Tipo agregado al kiosco.', 'success');
+        cargarTiposKiosco();
+      } catch (e) { mostrarAlerta('Error al agregar tipo.', 'error'); }
+    });
 
     async function cargarSucursalesEnKiosco() {
       try {
@@ -1350,6 +1473,7 @@
     obtenerUsuarioActual().then(() => cargarUsuarios());
     cargarSucursales();
     cargarSucursalesEnKiosco();
+    cargarTiposKiosco();
   </script>
 </body>
 </html>

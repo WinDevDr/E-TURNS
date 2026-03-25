@@ -548,7 +548,8 @@ router.put('/config', (req, res) => {
 });
 
 // GET /api/stats
-router.get('/stats', (req, res) => {  const hoy = new Date().toISOString().split('T')[0];
+router.get('/stats', (req, res) => {
+  const hoy = new Date().toISOString().split('T')[0];
 
   const queries = {
     atendidos: `SELECT COUNT(*) as total FROM turnos WHERE estado = 'atendido' AND DATE(fecha_hora) = ?`,
@@ -739,6 +740,66 @@ router.delete('/sucursales/:id', requireAuth, requireAdmin, (req, res) => {
       if (this.changes === 0) return res.status(404).json({ error: 'Sucursal no encontrada.' });
       res.json({ mensaje: 'Sucursal eliminada correctamente.' });
     });
+  });
+});
+
+// ===================== TIPOS KIOSCO =====================
+
+// GET /api/tipos-kiosco — listar tipos (público para kiosco)
+router.get('/tipos-kiosco', (req, res) => {
+  db.all('SELECT * FROM tipos_kiosco WHERE activo = 1 ORDER BY orden ASC, id ASC', (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// POST /api/tipos-kiosco — crear tipo (admin)
+router.post('/tipos-kiosco', requireAuth, requireAdmin, (req, res) => {
+  const { nombre, color, orden } = req.body;
+  if (!nombre || !nombre.trim()) return res.status(400).json({ error: 'El nombre es requerido.' });
+  const colorVal = color || '#FF8500';
+  const ordenVal = orden || 0;
+
+  db.run(
+    'INSERT INTO tipos_kiosco (nombre, color, orden) VALUES (?, ?, ?)',
+    [nombre.trim(), colorVal, ordenVal],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      db.get('SELECT * FROM tipos_kiosco WHERE id = ?', [this.lastID], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json(row);
+      });
+    }
+  );
+});
+
+// PUT /api/tipos-kiosco/:id — actualizar tipo (admin)
+router.put('/tipos-kiosco/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { nombre, color, orden, activo } = req.body;
+  if (!nombre || !nombre.trim()) return res.status(400).json({ error: 'El nombre es requerido.' });
+
+  db.run(
+    'UPDATE tipos_kiosco SET nombre = ?, color = ?, orden = ?, activo = ? WHERE id = ?',
+    [nombre.trim(), color || '#FF8500', orden || 0, activo !== undefined ? (activo ? 1 : 0) : 1, id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Tipo no encontrado.' });
+      db.get('SELECT * FROM tipos_kiosco WHERE id = ?', [id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row);
+      });
+    }
+  );
+});
+
+// DELETE /api/tipos-kiosco/:id — eliminar tipo (admin)
+router.delete('/tipos-kiosco/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  db.run('DELETE FROM tipos_kiosco WHERE id = ?', [id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Tipo no encontrado.' });
+    res.json({ mensaje: 'Tipo eliminado correctamente.' });
   });
 });
 

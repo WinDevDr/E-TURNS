@@ -240,6 +240,9 @@
         const res = await fetch('/api/config');
         const config = await res.json();
 
+        // Guardar sucursal_id de la pantalla para unirse a sala de socket
+        window._sucursalPantalla = config.kiosco_sucursal_id || null;
+
         // Nombre del hospital
         const nombre = config.nombre || 'E-TURNS';
         document.getElementById('ticker-nombre').textContent = nombre;
@@ -382,7 +385,13 @@
     }
 
     socket.on('turn_called', mostrarTurno);
-    cargarConfig();
+    cargarConfig().then(() => {
+      // Unirse a la sala de la sucursal configurada para esta pantalla
+      const sucursalId = window._sucursalPantalla;
+      if (sucursalId) {
+        socket.emit('join_branch', { sucursal_id: sucursalId });
+      }
+    });
   </script>
 </body>
 </html>
