@@ -15,7 +15,7 @@
     }
     .screen {
       display: grid;
-      grid-template-columns: 60fr 40fr;
+      grid-template-columns: 50fr 50fr;
       height: 100vh;
     }
 
@@ -262,8 +262,8 @@
         }
 
         // Colores primarios → turno número y ventanilla
-        const colorPrimario = config.color_pantalla_primario || config.colorPrimario || '#0dcaf0';
-        const colorSecundario = config.color_pantalla_secundario || config.colorSecundario || '#0d6efd';
+        const colorPrimario = config.color_pantalla_primario || config.colorPrimario || '#FF8500';
+        const colorSecundario = config.color_pantalla_secundario || config.colorSecundario || '#e06000';
         document.getElementById('dynamic-styles').textContent = `
           .turno-numero:not(.sin-turno) { color: ${colorPrimario}; text-shadow: 0 0 60px ${colorPrimario}55; }
           .turno-ventanilla { background: ${colorSecundario}; }

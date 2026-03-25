@@ -127,7 +127,8 @@ function initDatabase() {
       `ALTER TABLE turnos ADD COLUMN atendido_por_facturacion TEXT`,
       `ALTER TABLE turnos ADD COLUMN fecha_llamado_facturacion DATETIME`,
       `ALTER TABLE turnos ADD COLUMN atendido_por_muestra TEXT`,
-      `ALTER TABLE turnos ADD COLUMN fecha_llamado_muestra DATETIME`
+      `ALTER TABLE turnos ADD COLUMN fecha_llamado_muestra DATETIME`,
+      `ALTER TABLE turnos ADD COLUMN sucursal_id INTEGER`
     ];
     turnosCols.forEach(sql => db.run(sql, (err) => {
       if (err && !err.message.includes('duplicate column name')) {

@@ -61,6 +61,7 @@ const loginLimiter = rateLimit({
 });
 
 app.use('/auth/login', loginLimiter);
+app.use('/auth/select-branch', loginLimiter); // also rate-limit branch selection
 app.use('/auth', authRouter);
 
 // Rutas de vistas — se definen ANTES de express.static para que tengan prioridad

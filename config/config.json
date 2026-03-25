@@ -2,23 +2,23 @@
   "hospital": {
     "nombre": "Hospital General",
     "logo": "",
-    "colorPrimario": "#0d6efd",
-    "colorSecundario": "#198754",
+    "colorPrimario": "#FF8500",
+    "colorSecundario": "#e06000",
     "videoYoutube": "https://www.youtube.com/embed/dQw4w9WgXcQ",
     "mensaje": "Bienvenido al sistema de turnos electrónico",
     "ventanillas": 3,
-    "color_kiosco_primario": "#0d6efd",
-    "color_kiosco_secundario": "#198754",
+    "color_kiosco_primario": "#FF8500",
+    "color_kiosco_fondo": "#f5f5f5",
     "color_fondo_pantalla": "#0a0a1a",
-    "color_pantalla_primario": "#0dcaf0",
-    "color_pantalla_secundario": "#0d6efd",
-    "color_panel_primario": "#0d6efd",
-    "color_panel_secundario": "#198754",
+    "color_pantalla_primario": "#FF8500",
+    "color_pantalla_secundario": "#e06000",
+    "color_panel_primario": "#FF8500",
+    "color_panel_secundario": "#e06000",
     "horario_apertura": "07:00",
     "horario_cierre": "17:00"
   },
   "areas": [
-    { "nombre": "Facturación", "prefijo": "F", "color": "#0d6efd" },
-    { "nombre": "Toma de Muestra", "prefijo": "M", "color": "#198754" }
+    { "nombre": "Facturación", "prefijo": "F", "color": "#FF8500" },
+    { "nombre": "Toma de Muestra", "prefijo": "M", "color": "#e06000" }
   ]
 }

@@ -59,10 +59,24 @@ const uploadLogoArea = multer({ storage: storageLogoArea, fileFilter, limits: { 
 // GET /api/turnos
 router.get('/turnos', (req, res) => {
   const incluirCancelados = req.query.incluir_cancelados === 'true';
-  const sql = incluirCancelados
-    ? 'SELECT * FROM turnos ORDER BY fecha_hora ASC'
-    : "SELECT * FROM turnos WHERE estado != 'cancelado' ORDER BY fecha_hora ASC";
-  db.all(sql, (err, rows) => {
+  // Operators filter by their branch; admins see all
+  const sucursalId = req.session && req.session.sucursalId ? req.session.sucursalId : null;
+  const isAdmin = req.session && req.session.rol === 'admin';
+
+  let sql, params;
+  if (!isAdmin && sucursalId) {
+    sql = incluirCancelados
+      ? 'SELECT * FROM turnos WHERE sucursal_id = ? ORDER BY fecha_hora ASC'
+      : "SELECT * FROM turnos WHERE estado != 'cancelado' AND sucursal_id = ? ORDER BY fecha_hora ASC";
+    params = [sucursalId];
+  } else {
+    sql = incluirCancelados
+      ? 'SELECT * FROM turnos ORDER BY fecha_hora ASC'
+      : "SELECT * FROM turnos WHERE estado != 'cancelado' ORDER BY fecha_hora ASC";
+    params = [];
+  }
+
+  db.all(sql, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -71,7 +85,7 @@ router.get('/turnos', (req, res) => {
 // POST /api/turnos — crear nuevo turno
 router.post('/turnos', (req, res) => {
   const { tipo_paciente, preferencial } = req.body;
-  let { area } = req.body;
+  let { area, sucursal_id } = req.body;
 
   // Todos los tipos pasan por Facturación primero (incluyendo Entrega de Resultados)
   if (!area) {
@@ -80,6 +94,7 @@ router.post('/turnos', (req, res) => {
 
   const etapa_inicial = 'espera_sala';
   const esPreferencial = preferencial ? 1 : 0;
+  const sucursalIdFinal = sucursal_id || null;
 
   // Obtener prefijo del área
   db.get('SELECT prefijo FROM areas WHERE nombre = ?', [area], (err, areaRow) => {
@@ -89,29 +104,30 @@ router.post('/turnos', (req, res) => {
     const prefijo = areaRow.prefijo;
     const hoy = new Date().toISOString().split('T')[0];
 
-    // Contar turnos del día para esta área
-    db.get(
-      `SELECT COUNT(*) as count FROM turnos WHERE area = ? AND DATE(fecha_hora) = ?`,
-      [area, hoy],
-      (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
+    // Contar turnos del día para esta área y sucursal
+    const countSql = sucursalIdFinal
+      ? `SELECT COUNT(*) as count FROM turnos WHERE area = ? AND DATE(fecha_hora) = ? AND sucursal_id = ?`
+      : `SELECT COUNT(*) as count FROM turnos WHERE area = ? AND DATE(fecha_hora) = ?`;
+    const countParams = sucursalIdFinal ? [area, hoy, sucursalIdFinal] : [area, hoy];
 
-        const siguiente = (row.count || 0) + 1;
-        const numero = `${prefijo}${String(siguiente).padStart(2, '0')}`;
+    db.get(countSql, countParams, (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
 
-        db.run(
-          'INSERT INTO turnos (numero, area, estado, tipo_paciente, etapa, preferencial) VALUES (?, ?, ?, ?, ?, ?)',
-          [numero, area, 'esperando', tipo_paciente || null, etapa_inicial, esPreferencial],
-          function (err) {
+      const siguiente = (row.count || 0) + 1;
+      const numero = `${prefijo}${String(siguiente).padStart(2, '0')}`;
+
+      db.run(
+        'INSERT INTO turnos (numero, area, estado, tipo_paciente, etapa, preferencial, sucursal_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [numero, area, 'esperando', tipo_paciente || null, etapa_inicial, esPreferencial, sucursalIdFinal],
+        function (err) {
+          if (err) return res.status(500).json({ error: err.message });
+          db.get('SELECT * FROM turnos WHERE id = ?', [this.lastID], (err, turno) => {
             if (err) return res.status(500).json({ error: err.message });
-            db.get('SELECT * FROM turnos WHERE id = ?', [this.lastID], (err, turno) => {
-              if (err) return res.status(500).json({ error: err.message });
-              res.status(201).json(turno);
-            });
-          }
-        );
-      }
-    );
+            res.status(201).json(turno);
+          });
+        }
+      );
+    });
   });
 });
 
@@ -623,6 +639,14 @@ router.get('/stats/detalle', requireAuth, (req, res) => {
 });
 
 // ===================== SUCURSALES =====================
+
+// GET /api/sucursales/public — listar sucursales (sin auth, para kiosco)
+router.get('/sucursales/public', (req, res) => {
+  db.all('SELECT id, nombre FROM sucursales WHERE activa = 1 ORDER BY nombre ASC', (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
 
 // GET /api/sucursales — listar sucursales con usuarios asignados
 router.get('/sucursales', requireAuth, requireAdmin, (req, res) => {

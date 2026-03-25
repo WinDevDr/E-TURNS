@@ -114,10 +114,10 @@
             <tr>
               <th>#</th><th>Número</th><th>Tipo</th><th>Pref.</th><th>Área</th>
               <th>Hora Llegada</th><th>Llamado Fact.</th><th>Atend. Fact.</th>
-              <th>Llamado Muestra</th><th>Atend. Muestra</th><th>Estado</th>
+              <th>Llamado Muestra</th><th>Atend. Muestra</th><th>Finalizado</th><th>Estado</th>
             </tr>
           </thead>
-          <tbody id="tabla-detalle"><tr><td colspan="11" class="empty">Cargando...</td></tr></tbody>
+          <tbody id="tabla-detalle"><tr><td colspan="12" class="empty">Cargando...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -191,7 +191,7 @@
         const turnos = await res.json();
         const tbody = document.getElementById('tabla-detalle');
         if (!turnos || turnos.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="11" class="empty">Sin turnos para la fecha seleccionada.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="12" class="empty">Sin turnos para la fecha seleccionada.</td></tr>';
           return;
         }
         const fmt = v => v ? new Date(v).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—';
@@ -207,11 +207,12 @@
             <td>${escHtml(t.atendido_por_facturacion)}</td>
             <td>${fmt(t.fecha_llamado_muestra)}</td>
             <td>${escHtml(t.atendido_por_muestra)}</td>
+            <td>${fmt(t.fecha_atendido)}</td>
             <td>${escHtml(t.estado)}</td>
           </tr>
         `).join('');
       } catch (e) {
-        document.getElementById('tabla-detalle').innerHTML = '<tr><td colspan="11" class="empty">Error al cargar detalle.</td></tr>';
+        document.getElementById('tabla-detalle').innerHTML = '<tr><td colspan="12" class="empty">Error al cargar detalle.</td></tr>';
       }
     }
 
