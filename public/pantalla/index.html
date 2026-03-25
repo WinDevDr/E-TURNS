@@ -11,12 +11,10 @@
       background: #0a0a1a;
       color: #fff;
       min-height: 100vh;
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      grid-template-rows: auto 1fr auto;
+      display: flex;
+      flex-direction: column;
     }
     header {
-      grid-column: 1 / -1;
       background: linear-gradient(90deg, #0d6efd, #198754);
       padding: 1rem 2rem;
       display: flex;
@@ -25,55 +23,73 @@
     }
     header h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: 2px; }
     #reloj { font-size: 1.4rem; font-weight: 700; font-family: monospace; }
-    .turno-panel {
+    .turnos-container {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 3rem;
+      padding: 1.5rem 2rem;
+      gap: 1rem;
+      overflow-y: auto;
     }
-    .turno-etiqueta { font-size: 1.2rem; color: #adb5bd; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; }
-    .turno-numero {
-      font-size: 10rem;
+    .turno-card {
+      background: linear-gradient(135deg, #1a1a3e, #0d0d2b);
+      border: 2px solid #0dcaf0;
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      box-shadow: 0 0 20px rgba(13,202,240,0.15);
+    }
+    .turno-card:first-child {
+      background: linear-gradient(135deg, #0d6efd33, #0dcaf033);
+      border-color: #0dcaf0;
+      box-shadow: 0 0 40px rgba(13,202,240,0.3);
+    }
+    .turno-card .turno-numero {
+      font-size: 5rem;
       font-weight: 900;
       color: #0dcaf0;
-      text-shadow: 0 0 40px rgba(13,202,240,0.4);
+      text-shadow: 0 0 30px rgba(13,202,240,0.4);
       line-height: 1;
-      margin-bottom: 1.5rem;
-      transition: all 0.3s;
+      min-width: 200px;
+      text-align: center;
     }
-    .turno-area {
-      font-size: 2rem;
-      color: #adb5bd;
-      margin-bottom: 0.75rem;
+    .turno-card:first-child .turno-numero {
+      font-size: 6rem;
     }
-    .turno-ventanilla {
-      font-size: 1.5rem;
-      background: #0d6efd;
-      color: #fff;
-      padding: 0.5rem 1.5rem;
-      border-radius: 30px;
-      font-weight: 700;
-    }
-    .sin-turno { color: #495057; font-style: italic; font-size: 2rem; }
-    .video-panel {
-      border-left: 2px solid #1e1e3a;
+    .turno-info {
+      flex: 1;
       display: flex;
       flex-direction: column;
+      gap: 0.3rem;
+    }
+    .turno-card .turno-area {
+      font-size: 1.8rem;
+      color: #adb5bd;
+      font-weight: 600;
+    }
+    .turno-card .turno-ventanilla {
+      display: inline-block;
+      font-size: 1.3rem;
+      background: #0d6efd;
+      color: #fff;
+      padding: 0.3rem 1rem;
+      border-radius: 20px;
+      font-weight: 700;
+      width: fit-content;
+    }
+    .sin-turno-msg {
+      flex: 1;
+      display: flex;
       align-items: center;
       justify-content: center;
-      background: #0d0d2b;
-      padding: 1rem;
+      color: #495057;
+      font-style: italic;
+      font-size: 2.5rem;
     }
-    .video-panel iframe {
-      width: 100%;
-      aspect-ratio: 16/9;
-      border: none;
-      border-radius: 10px;
-    }
-    .video-panel p { color: #6c757d; margin-top: 0.5rem; font-size: 0.8rem; text-align: center; }
     footer {
-      grid-column: 1 / -1;
       background: #050510;
       padding: 0.75rem 2rem;
       text-align: center;
@@ -81,20 +97,6 @@
       font-size: 0.85rem;
     }
     #mensaje-footer { font-style: italic; }
-    .historial {
-      margin-top: 2rem;
-      max-width: 400px;
-      width: 100%;
-    }
-    .historial h4 { color: #6c757d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem; }
-    .historial-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.4rem 0;
-      border-bottom: 1px solid #1e1e3a;
-      color: #adb5bd;
-      font-size: 0.95rem;
-    }
     @keyframes parpadeo {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
@@ -108,21 +110,8 @@
     <div id="reloj">--:--:--</div>
   </header>
 
-  <div class="turno-panel">
-    <div class="turno-etiqueta">Turno en atención</div>
-    <div class="turno-numero sin-turno" id="turno-numero">---</div>
-    <div class="turno-area" id="turno-area"></div>
-    <div class="turno-ventanilla" id="turno-ventanilla" style="display:none"></div>
-
-    <div class="historial">
-      <h4>Últimos turnos llamados</h4>
-      <div id="historial-list"></div>
-    </div>
-  </div>
-
-  <div class="video-panel">
-    <iframe id="video-frame" src="" allowfullscreen></iframe>
-    <p>Entretenimiento mientras espera</p>
+  <div class="turnos-container" id="turnos-container">
+    <div class="sin-turno-msg">Esperando turnos...</div>
   </div>
 
   <footer>
@@ -132,7 +121,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    let historial = [];
+    let turnosLlamados = [];
 
     // Reloj
     function actualizarReloj() {
@@ -147,46 +136,41 @@
         const res = await fetch('/api/config');
         const config = await res.json();
         if (config.nombre) document.getElementById('hospital-nombre').textContent = config.nombre;
-        if (config.videoYoutube) document.getElementById('video-frame').src = config.videoYoutube + '?autoplay=1&mute=1&loop=1';
         if (config.mensaje) document.getElementById('mensaje-footer').textContent = config.mensaje;
       } catch (e) {}
     }
 
-    // Mostrar turno llamado
-    function mostrarTurno(turno) {
-      const numEl = document.getElementById('turno-numero');
-      numEl.classList.remove('sin-turno', 'nuevo-turno');
-      numEl.textContent = turno.numero;
-      void numEl.offsetWidth; // reflow para reiniciar animación
-      numEl.classList.add('nuevo-turno');
-
-      document.getElementById('turno-area').textContent = turno.area || '';
-      const ventEl = document.getElementById('turno-ventanilla');
-      if (turno.ventanilla) {
-        ventEl.textContent = turno.ventanilla;
-        ventEl.style.display = 'block';
-      } else {
-        ventEl.style.display = 'none';
+    // Renderizar lista de turnos llamados
+    function renderTurnosLlamados() {
+      const container = document.getElementById('turnos-container');
+      if (turnosLlamados.length === 0) {
+        container.innerHTML = '<div class="sin-turno-msg">Esperando turnos...</div>';
+        return;
       }
 
-      // Agregar al historial
-      historial.unshift(turno);
-      if (historial.length > 5) historial.pop();
-      renderHistorial();
+      container.innerHTML = turnosLlamados.map((turno, index) => `
+        <div class="turno-card${index === 0 ? ' nuevo-turno' : ''}">
+          <div class="turno-numero">${turno.numero}</div>
+          <div class="turno-info">
+            <div class="turno-area">${turno.area || ''}</div>
+            ${turno.ventanilla ? `<div class="turno-ventanilla">${turno.ventanilla}</div>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Mostrar turno llamado
+    function mostrarTurno(turno) {
+      // Remover si ya existe (para re-llamadas)
+      turnosLlamados = turnosLlamados.filter(t => t.numero !== turno.numero);
+      // Agregar al inicio
+      turnosLlamados.unshift(turno);
+      // Mantener máximo 8 turnos visibles
+      if (turnosLlamados.length > 8) turnosLlamados.pop();
+      renderTurnosLlamados();
 
       // TTS — anuncio por voz
       anunciarVoz(turno);
-    }
-
-    function renderHistorial() {
-      const el = document.getElementById('historial-list');
-      el.innerHTML = historial.slice(1).map(t => `
-        <div class="historial-item">
-          <span>${t.numero}</span>
-          <span>${t.area}</span>
-          <span style="color:#6c757d;font-size:0.8rem">${t.ventanilla || ''}</span>
-        </div>
-      `).join('');
     }
 
     // Text-to-Speech

@@ -88,6 +88,10 @@
   <header>
     <h1>🖥️ Panel Operador — E-TURNS</h1>
     <div class="ventanilla-select">
+      <label>Área:</label>
+      <select id="area-sel">
+        <option value="">Todas</option>
+      </select>
       <label>Ventanilla:</label>
       <select id="ventanilla-sel">
         <option value="Ventanilla 1">Ventanilla 1</option>
@@ -140,6 +144,47 @@
     const socket = io();
     let turnos = [];
     let turnoLlamadoActual = null;
+    let areaSeleccionada = '';
+
+    // Áreas ocultas por área de operador (ej: Facturación no ve Toma de Muestra)
+    const areasOcultas = {
+      'Facturación': ['Toma de Muestra']
+    };
+
+    // Cargar áreas para el selector
+    async function cargarAreas() {
+      try {
+        const res = await fetch('/api/areas');
+        const areas = await res.json();
+        const sel = document.getElementById('area-sel');
+        areas.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a.nombre;
+          opt.textContent = a.nombre;
+          sel.appendChild(opt);
+        });
+      } catch (e) {}
+    }
+
+    document.getElementById('area-sel').addEventListener('change', function() {
+      areaSeleccionada = this.value;
+      renderTurnos();
+      actualizarStats();
+    });
+
+    function filtrarTurnosPorArea(lista) {
+      let filtrada = lista;
+      if (areaSeleccionada) {
+        // Mostrar solo turnos del área seleccionada
+        filtrada = filtrada.filter(t => t.area === areaSeleccionada);
+      }
+      // Ocultar áreas según reglas (ej: Facturación no ve Toma de Muestra)
+      const ocultas = areasOcultas[areaSeleccionada] || [];
+      if (ocultas.length > 0) {
+        filtrada = filtrada.filter(t => !ocultas.includes(t.area));
+      }
+      return filtrada;
+    }
 
     async function cargarTurnos() {
       try {
@@ -159,13 +204,14 @@
         const stats = await res.json();
         document.getElementById('stat-atendidos').textContent = stats.atendidos || 0;
       } catch (e) {}
-      document.getElementById('stat-espera').textContent = turnos.filter(t => t.estado === 'esperando').length;
-      document.getElementById('stat-llamados').textContent = turnos.filter(t => t.estado === 'llamado').length;
+      document.getElementById('stat-espera').textContent = filtrarTurnosPorArea(turnos).filter(t => t.estado === 'esperando').length;
+      document.getElementById('stat-llamados').textContent = filtrarTurnosPorArea(turnos).filter(t => t.estado === 'llamado').length;
     }
 
     function renderTurnos() {
       const tbody = document.getElementById('turnos-tbody');
-      const enEspera = turnos.filter(t => t.estado === 'esperando' || t.estado === 'llamado');
+      const filtrados = filtrarTurnosPorArea(turnos);
+      const enEspera = filtrados.filter(t => t.estado === 'esperando' || t.estado === 'llamado');
 
       if (enEspera.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No hay turnos en espera.</td></tr>';
@@ -249,6 +295,7 @@
     socket.on('stats_updated', actualizarStats);
 
     // Inicializar
+    cargarAreas();
     cargarTurnos();
   </script>
 </body>
