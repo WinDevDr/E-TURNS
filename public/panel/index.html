@@ -561,10 +561,12 @@
       if (miSucursalId) {
         socket.emit('join_branch', { sucursal_id: miSucursalId });
       }
+      // Reload all turns on reconnect to catch any missed during disconnection
+      cargarTurnos();
     });
 
-    // Actualizar tiempos cada segundo
-    setInterval(() => renderKanban(), 1000);
+    // Actualizar tiempos cada 10 segundos
+    setInterval(() => renderKanban(), 10000);
 
     // Inicializar
     // Initialize: load user info first so tipo_area is set before filtering puestos
