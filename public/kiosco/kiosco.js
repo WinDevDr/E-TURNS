@@ -57,11 +57,7 @@ async function cargarConfig() {
 
     const bg = config.color_kiosco_fondo || '#f5f5f5';
     document.body.style.background = bg;
-
-    // Apply font family
-    if (config.font_family) {
-      document.body.style.fontFamily = config.font_family;
-    }
+    // Font is always Comfortaa — no font override needed
   } catch (e) {
     console.error('Error al cargar config:', e);
   }
@@ -78,9 +74,8 @@ async function cargarTipos() {
     tipos.forEach(t => {
       const btn = document.createElement('button');
       btn.className = 'tipo-btn';
-      btn.style.background = t.color || '#FF8500';
-      const brightness = hexBrightness(t.color || '#FF8500');
-      btn.style.color = brightness > 160 ? '#333' : '#fff';
+      btn.style.background = '#fff';
+      btn.style.color = '#222';
       btn.textContent = t.nombre;
       btn.onclick = () => solicitarTurno(t.nombre);
       grid.appendChild(btn);
@@ -88,9 +83,9 @@ async function cargarTipos() {
 
     const prefBtn = document.createElement('button');
     prefBtn.className = 'tipo-btn pref-btn';
-    prefBtn.style.background = '#ffc107';
-    prefBtn.style.color = '#333';
-    prefBtn.textContent = 'Turno Preferencial';
+    prefBtn.style.background = '#fff';
+    prefBtn.style.color = '#222';
+    prefBtn.innerHTML = '<span style="display:flex;flex-direction:column;align-items:center;gap:0.4rem"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#FF8500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2"/><path d="M12 7.5a3.5 3.5 0 0 0-3.5 3.5v1h2l.5 6h2l.5-6h2v-1A3.5 3.5 0 0 0 12 7.5z"/><circle cx="12" cy="12" r="10" stroke-dasharray="2 2"/></svg><span>Turno Preferencial</span></span>';
     prefBtn.onclick = () => abrirModalPreferencial(tipos);
     grid.appendChild(prefBtn);
   } catch (e) {
@@ -113,9 +108,8 @@ function abrirModalPreferencial(tipos) {
   tipos.forEach(t => {
     const btn = document.createElement('button');
     btn.className = 'tipo-btn';
-    btn.style.background = t.color || '#FF8500';
-    const brightness = hexBrightness(t.color || '#FF8500');
-    btn.style.color = brightness > 160 ? '#333' : '#fff';
+    btn.style.background = '#fff';
+    btn.style.color = '#222';
     btn.textContent = t.nombre;
     btn.onclick = () => solicitarTurnoPref(t.nombre);
     grid.appendChild(btn);

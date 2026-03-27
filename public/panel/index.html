@@ -85,11 +85,6 @@
       background: #adb5bd;
       color: #fff;
     }
-    /* Green for finalizados */
-    .col-header.green {
-      background: #198754;
-      color: #fff;
-    }
     .col-body {
       padding: 0.6rem;
       display: flex;
@@ -103,9 +98,9 @@
       border-radius: 10px;
       padding: 1rem;
       border-left: 4px solid #6c757d;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      box-shadow: 0 0 12px rgba(255,133,0,0.35);
     }
-    .turn-card.preferencial { border-left-color: gold; }
+    .turn-card.preferencial { border-left-color: gold; box-shadow: 0 0 16px rgba(255,193,7,0.5); }
     .turn-num { font-size: 1.6rem; font-weight: 900; color: #333; }
     .turn-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.35rem 0; }
     .badge {
@@ -128,7 +123,6 @@
     .btn-cancelar { background: #dc3545; color: #fff; }
     .btn-rellamar { background: #198754; color: #fff; }
     .empty-col { text-align: center; color: #bbb; padding: 2rem 1rem; font-style: italic; font-size: 0.9rem; }
-    .turn-card.finalizado { opacity: 0.7; border-left-color: #6c757d; background: #f0f0f0; }
     .btn-logout { background: rgba(220,53,69,0.85); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 0.9rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
   </style>
 </head>
@@ -162,7 +156,7 @@
         <div class="num" id="stat-facturacion">0</div>
         <div class="lbl">En Facturación</div>
       </div>
-      <div class="stat-card" id="stat-card-espera-muestra">
+      <div class="stat-card" id="stat-card-espera-muestra" style="display:none">
         <div class="num" id="stat-espera-muestra">0</div>
         <div class="lbl">Espera Muestra</div>
       </div>
@@ -181,17 +175,13 @@
         <div class="col-header">En Facturación</div>
         <div class="col-body" id="cards-facturacion"></div>
       </div>
-      <div class="kanban-col" id="col-espera-muestra">
+      <div class="kanban-col hidden" id="col-espera-muestra">
         <div class="col-header gray">Espera Toma de Muestra</div>
         <div class="col-body" id="cards-espera-muestra"></div>
       </div>
       <div class="kanban-col" id="col-toma-muestra">
         <div class="col-header">Toma de Muestra</div>
         <div class="col-body" id="cards-toma-muestra"></div>
-      </div>
-      <div class="kanban-col" id="col-finalizados">
-        <div class="col-header green">✅ Finalizados Hoy</div>
-        <div class="col-body" id="cards-finalizados"></div>
       </div>
     </div>
   </div>
@@ -317,7 +307,6 @@
       const colFact = document.getElementById('col-facturacion');
       const colEsperaMuestra = document.getElementById('col-espera-muestra');
       const colTomaMuestra = document.getElementById('col-toma-muestra');
-      const colFin = document.getElementById('col-finalizados');
 
       const statEspera = document.getElementById('stat-card-espera-sala');
       const statFact = document.getElementById('stat-card-facturacion');
@@ -325,26 +314,24 @@
       const statTomaMuestra = document.getElementById('stat-card-toma-muestra');
 
       if (esMuestra) {
-        // Toma de Muestra: show Espera Toma de Muestra, Toma de Muestra, Finalizados
+        // Toma de Muestra: show Espera Toma de Muestra, Toma de Muestra
         colEspera.classList.add('hidden');
         colFact.classList.add('hidden');
         colEsperaMuestra.classList.remove('hidden');
         colTomaMuestra.classList.remove('hidden');
-        colFin.classList.remove('hidden');
         statEspera.style.display = 'none';
         statFact.style.display = 'none';
         statEsperaMuestra.style.display = '';
         statTomaMuestra.style.display = '';
       } else {
-        // Facturación: show Sala de Espera, En Facturación, Espera Toma de Muestra, Finalizados
+        // Facturación: show Sala de Espera, En Facturación (hide Espera Toma de Muestra)
         colEspera.classList.remove('hidden');
         colFact.classList.remove('hidden');
-        colEsperaMuestra.classList.remove('hidden');
+        colEsperaMuestra.classList.add('hidden');
         colTomaMuestra.classList.add('hidden');
-        colFin.classList.remove('hidden');
         statEspera.style.display = '';
         statFact.style.display = '';
-        statEsperaMuestra.style.display = '';
+        statEsperaMuestra.style.display = 'none';
         statTomaMuestra.style.display = 'none';
       }
     }
@@ -356,13 +343,10 @@
         'espera_muestra': document.getElementById('cards-espera-muestra'),
         'toma_muestra': document.getElementById('cards-toma-muestra')
       };
-      const colFin = document.getElementById('cards-finalizados');
 
       Object.values(cols).forEach(c => { c.innerHTML = ''; });
-      colFin.innerHTML = '';
 
       const activos = turnos.filter(t => t.estado !== 'atendido' && t.estado !== 'cancelado');
-      const finalizados = turnos.filter(t => t.estado === 'atendido' || t.estado === 'cancelado');
 
       activos.forEach(t => {
         const etapa = t.etapa || 'espera_sala';
@@ -370,20 +354,11 @@
         if (col) col.innerHTML += crearCard(t);
       });
 
-      const MAX_FINALIZADOS = 20;
-      const finRecientes = finalizados.slice(-MAX_FINALIZADOS).reverse();
-      finRecientes.forEach(t => {
-        colFin.innerHTML += crearCard(t);
-      });
-
       Object.entries(cols).forEach(([, col]) => {
         if (col.children.length === 0) {
           col.innerHTML = '<div class="empty-col">Sin turnos</div>';
         }
       });
-      if (colFin.children.length === 0) {
-        colFin.innerHTML = '<div class="empty-col">Sin turnos finalizados hoy</div>';
-      }
 
       actualizarStats(activos);
     }
@@ -464,8 +439,6 @@
           const secundario = cfg.color_panel_secundario || '#e06000';
           const header = document.querySelector('header');
           if (header) header.style.background = `linear-gradient(90deg, ${primario}, ${secundario})`;
-          // Apply font family
-          if (cfg.font_family) document.body.style.fontFamily = cfg.font_family;
         }
       } catch (e) {}
     }
@@ -590,8 +563,8 @@
       }
     });
 
-    // Actualizar tiempos cada 30s
-    setInterval(() => renderKanban(), 30000);
+    // Actualizar tiempos cada segundo
+    setInterval(() => renderKanban(), 1000);
 
     // Inicializar
     // Initialize: load user info first so tipo_area is set before filtering puestos

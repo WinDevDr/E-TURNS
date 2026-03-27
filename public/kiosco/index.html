@@ -26,13 +26,13 @@
       text-align: center;
     }
     #hospital-logo {
-      max-height: 90px;
-      max-width: 260px;
+      max-height: 140px;
+      max-width: 320px;
       object-fit: contain;
       margin-bottom: 0.5rem;
     }
     #hospital-nombre {
-      font-size: 1.1rem;
+      font-size: 1.3rem;
       font-weight: 600;
       color: #555;
       margin-top: 0.25rem;
@@ -53,21 +53,29 @@
     }
     .tipo-btn {
       padding: 2rem 1rem;
-      border: none;
+      border: 2px solid #FF8500;
       border-radius: 16px;
       font-size: 1.1rem;
       font-weight: 700;
       cursor: pointer;
       transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      box-shadow: 0 0 18px rgba(255,133,0,0.45);
       min-height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
       text-align: center;
+      background: #fff;
+      color: #222;
+      font-family: 'Comfortaa', sans-serif;
     }
-    .tipo-btn:hover { transform: scale(1.05); opacity: 0.92; box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+    .tipo-btn:hover { transform: scale(1.05); box-shadow: 0 0 28px rgba(255,133,0,0.7); }
     .tipo-btn:active { transform: scale(0.98); }
+    .tipo-btn.pref-btn {
+      background: #fff;
+      color: #222;
+      border-color: #FF8500;
+    }
     /* Modals */
     .modal-overlay {
       display: none;

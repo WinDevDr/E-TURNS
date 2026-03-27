@@ -212,21 +212,7 @@
               <option value="completo">Pantalla completa (100%)</option>
             </select>
           </div>
-          <div class="form-group">
-            <label>🔤 Fuente de Texto (todas las páginas)</label>
-            <select id="conf-font_family">
-              <option value="'Segoe UI', Arial, sans-serif">Segoe UI (por defecto)</option>
-              <option value="Arial, Helvetica, sans-serif">Arial</option>
-              <option value="'Times New Roman', Times, serif">Times New Roman</option>
-              <option value="'Courier New', Courier, monospace">Courier New</option>
-              <option value="Georgia, 'Times New Roman', serif">Georgia</option>
-              <option value="Verdana, Geneva, Tahoma, sans-serif">Verdana</option>
-              <option value="Tahoma, Geneva, Verdana, sans-serif">Tahoma</option>
-              <option value="'Trebuchet MS', Helvetica, sans-serif">Trebuchet MS</option>
-              <option value="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">Impact</option>
-              <option value="'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif">Gill Sans</option>
-            </select>
-          </div>
+          <!-- Font is always Comfortaa -->
           <div class="form-group">
             <label>Voz para Anuncios de Turnos (TTS)</label>
             <select id="conf-voz_tts">
@@ -749,13 +735,7 @@
           else window.addEventListener('vozesListas', setVoice, { once: true });
         }
         if (config.mensaje) document.getElementById('conf-mensaje').value = config.mensaje;
-        if (config.font_family) {
-          const fontSel = document.getElementById('conf-font_family');
-          // Try to match existing option; if not found, keep default
-          const opts = Array.from(fontSel.options);
-          const match = opts.find(o => o.value === config.font_family);
-          if (match) fontSel.value = config.font_family;
-        }
+        // Font is always Comfortaa — no font selector needed
         const preview = document.getElementById('logo-preview-sistema');
         const logoUrl = config.logo_url || config.logo;
         if (logoUrl) {
@@ -775,8 +755,7 @@
         videoYoutube: document.getElementById('conf-videoYoutube').value,
         video_size: document.getElementById('conf-video_size').value,
         voz_tts: document.getElementById('conf-voz_tts').value,
-        mensaje: document.getElementById('conf-mensaje').value,
-        font_family: document.getElementById('conf-font_family').value
+        mensaje: document.getElementById('conf-mensaje').value
       };
       try {
         const res = await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
